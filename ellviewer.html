@@ -1,0 +1,1211 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>ELL viewer</title>
+  <meta charset="utf-8">
+  <link href="https://lundberglab.stanford.edu/assets/img/favicon.png" rel="icon">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.14.0/jquery-ui.min.js" integrity="sha256-Fb0zP4jE3JHqu+IBB9YktLcSjI1Zc6J2b6gTjB0LpoM=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.40/jquery.csv.min.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script> 
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css">
+
+<style>
+  body, html {
+    font-family: Arial, Verdana, sans-serif;;
+    background-color: #000000;
+  }
+  .content {
+    flex: 1 0px;
+    position: relative;
+    overflow: auto;
+  }
+  #canvas-div {
+    position:relative;
+    height: calc(100vh - 10px);
+  }
+  #canvas-wrapper {
+    position:absolute;
+    top: 0;
+    left: 0;
+  }
+  #canvas-image {
+    position:relative;
+    top:0;
+    left:0;
+  }
+  canvas, img {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+  }
+  .channel-menu {
+    position:absolute;
+    top:20px;
+    left:calc(100vw - 555px);
+    color:white;
+    max-height: calc(100vh - 200px);
+    width: 500px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    scrollbar-width: 2px;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.75);
+  }
+  .channel-check-all {
+    margin-top: 13px;
+    margin-right: 20px;
+  }
+  .channel-exposure-all {
+    margin-top: 13px;
+    margin-right: 20px;
+  }
+  .separator {
+    width:100%;
+    border-top: 1px solid white;
+  }
+  .interactive-item {
+    cursor: pointer;
+  }  
+  .channel-list {
+    display: flex; 
+    flex-direction: column;
+  }
+  .channel-list div {
+    display: flex; 
+    flex-direction: row;
+  }
+  .channel-name {
+    width:100%;
+    height: 40px;
+    border-bottom: 1px solid #888888;
+  }
+  .channel-download {
+    margin-top: 13px;
+    margin-left: 10px;
+    color:white;
+  }
+  .channel-auto {
+    margin-top: 13px;
+    margin-left: 10px;
+  }
+  .channel-check {
+    margin-top: 5px;
+    margin-right: 20px;
+  }
+  input[type="color"] {
+    opacity: 0;
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: none;
+  }
+  #color-picker-wrapper {
+    margin-top: 6px;
+    margin-right: 5px;
+    width: 20px;
+    height: 20px;
+    float: left;
+  }
+  .channel-slider {
+    width: 100px;
+    margin: 15px;
+    margin-left: 30px;
+    height: 3px;
+    border:none !important;
+  }
+  .channel-slider .ui-widget,.ui-widget-content {
+    border:none !important;
+  }
+  .channel-slider .ui-slider-handle {
+    outline: 0;
+    background: white;
+    border-radius: 50%;
+    top: -8px;
+    border:none !important;
+  }
+  .channel-slider .ui-slider-horizontal {
+    top: 1em;
+    left: 5%;
+    height: .1em;
+    width: 90%;
+    border:none !important;
+    background: white;
+  }
+  .channel-range {
+    margin-top: 8px;
+    width: 80px;
+  }
+  .channel-delete {
+    margin-top: 5px;
+    margin-left: auto;
+  }
+  #fullscreen-indicator {
+    position:absolute;
+    top:25px;
+    left:calc(25px);
+    color:white;
+    display: flex; 
+    flex-direction: column;
+    justify-content: center; 
+  }
+  #retexturing-indicator {
+    position:absolute;
+    bottom:80px;
+    left:calc(100vw - 150px);
+    display: flex; 
+    flex-direction: column;
+    justify-content: center; 
+  }
+  #retexturing-indicator p {
+    color:#ff8800;
+    text-align:right;
+  }
+  #zoom-indicator {
+    position:absolute;
+    bottom:25px;
+    left:calc(100vw - 150px);
+    display: flex; 
+    flex-direction: column;
+    justify-content: center; 
+  }
+  #zoom-indicator p {
+    color:white;
+    text-align:left;
+  }
+  #button-wrapper {
+    position:absolute;
+    top:28px;
+    left:calc(100vw - 184px);
+  }
+  .button-channels {
+    background-color: white;
+    border: 2px solid #555555;
+    color: black;
+    padding: 10px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    transition-duration: 0.2s;
+    cursor: pointer;
+  }
+  .button-channels:hover {
+    background-color: #555555;
+    color: white;
+  }
+  .button-channels-menu {
+    margin-left: auto;
+  }
+  .button-channels-add {
+    margin-left: 20px;
+    padding:2px 32px;
+  }
+</style>
+<body>
+  <div class="content">
+    <div id="canvas-div">
+      <div id="canvas-wrapper">
+        <canvas id="canvas-images"></canvas>
+      </div>
+    </div>
+    <div id="channel-menu" class="channel-menu" style="z-index:100;display:none;">
+        <div style="display: flex; flex-direction: row">
+            <span class="material-symbols-outlined channel-check-all interactive-item" title="Show/hide" onclick="toggleAllChannels(this)">check_box</span>
+            <span class="material-symbols-outlined channel-exposure-all interactive-item" title="Apply min/max" onclick="autoAdjustAllChannels(this)">exposure</span>
+            <span class="material-symbols-outlined channel-exposure-all interactive-item" title="Reset" onclick="resetAll(this)">reset_image</span>
+            <p style="margin-right:20px">|</p>
+            <p>Apply to all</p>
+            <button class="button-channels button-channels-menu" onclick="closeChannelMenu()">Close</button>
+        </div>
+        <div style="display: flex; flex-direction: row">
+          <hr class="separator"/>
+        </div>
+        <div style="display: flex; flex-direction: row"> 
+          <select id="add-channel-select">
+          </select>
+          <button class="button-channels-add" onclick="addChannel()">Add channel</button>
+        </div>
+        <div id="channel-list" class="channel-list">
+        </div>
+    </div>
+    <div id="button-wrapper" style="z-index:100;display:block;">
+        <button class="button-channels" onclick="openChannelMenu()">Channels</button>
+    </div>
+    <div id="fullscreen-indicator" style="z-index:100;">
+      <span class="material-symbols-outlined interactive-item" onclick="toggleFullscreen(this)">fullscreen</span>
+    </div>
+    <div id="retexturing-indicator" style="z-index:100;">
+      <p>Retexturing...</p>
+    </div>
+    <div id="zoom-indicator" style="z-index:100;">
+      <p id="zoom-value">?</p>
+      <hr id="zoom-bar" class="separator"/>
+    </div>
+  </div>
+</body>
+<script>
+  if (fabric.isWebglSupported()) {
+    fabric.textureSize = fabric.maxTextureSize;
+  }
+
+  function openChannelMenu() {
+    if (!retexturing) {
+      document.getElementById("channel-menu").style.display = "block";
+      document.getElementById("button-wrapper").style.display = "none";
+    }
+  }
+
+  function closeChannelMenu() {
+    if (!retexturing) {
+      document.getElementById("channel-menu").style.display = "none";
+      document.getElementById("button-wrapper").style.display = "block";
+    }
+  } 
+
+  function toggleFullscreen(icon) {
+    if (!retexturing) {
+      if ($(icon).html() == "fullscreen") {
+        $(icon).html("fullscreen_exit");
+        var elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+          elem.msRequestFullscreen();
+        }
+      } else {
+        $(icon).html("fullscreen");
+        var elem = document.documentElement;
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+          document.msExitFullscreen();
+        }
+      }
+    }
+  }
+
+  function resetAll(icon) {
+    if (!retexturing) {
+      for (i = 0; i < channelImgs.length; i++) {
+        if (channelImgs[i] != null) {
+          if (channelImgs[i].csv_img_clip != "" && channelImgs[i].csv_img_clip != "no") {
+            channelImgs[i].v_minvalue = parseFloat(channelImgs[i].csv_img_clip.split("-")[ 0 ]) / parseFloat(bitDepth);
+            channelImgs[i].v_maxvalue = parseFloat(bitDepth) / parseFloat(channelImgs[i].csv_img_clip.split("-")[ 1 ]);
+          } else {
+            channelImgs[i].v_minvalue = 0.0
+            channelImgs[i].v_maxvalue = 1.0;
+          }
+          if (channelImgs[i].csv_img_transparency != "" && channelImgs[i].csv_img_transparency != "no") {
+            channelImgs[i].v_transparency = parseFloat(channelImgs[i].csv_img_transparency);
+          } else {
+            channelImgs[i].v_transparency = 1.0;
+          }
+          if (channelImgs[i].csv_img_color != "" && channelImgs[i].csv_img_color != "no") {
+            channelImgs[i].v_color = String(channelImgs[i].csv_img_color);
+          } else {
+            channelImgs[i].v_color = "no";
+          }
+          var sliderIntensityMin = Math.floor(channelImgs[i].v_minvalue * parseFloat(bitDepth));
+          var sliderIntensityMax = Math.min(bitDepth, Math.floor(parseFloat(bitDepth) / channelImgs[i].v_maxvalue));
+          $( "#sliderChannelIntensity" + (i + 1) ).slider( "option", "values", [ sliderIntensityMin, sliderIntensityMax ] );
+          $( "#sliderChannelIntensityValue" + (i + 1) ).html( sliderIntensityMin + " - " + sliderIntensityMax);
+          var sliderTransparencyValue = Math.floor(channelImgs[i].v_transparency * 100.0);
+          $( "#sliderChannelTransparency" + (i + 1) ).slider( "option", "value", sliderTransparencyValue );
+          $( "#sliderChannelTransparencyValue" + (i + 1) ).html( sliderTransparencyValue + "%");
+          adjustImage(channelImgs[i]);
+        }
+        if (resolution != null) {
+          if (channelImgsTiles[i] !=  null) {
+            for (j = 0; j < channelImgsTiles[i].length; j++) {
+              if (channelImgsTiles[i][j] != null) {
+                channelImgsTiles[i][j].v_minvalue = channelImgs[i].v_minvalue;
+                channelImgsTiles[i][j].v_maxvalue = channelImgs[i].v_maxvalue;
+                channelImgsTiles[i][j].v_transparency = channelImgs[i].v_transparency;
+                channelImgsTiles[i][j].v_color = channelImgs[i].v_color;    
+                adjustImage(channelImgsTiles[i][j]);
+              }
+            }
+          }
+        }
+      }  
+      var oImg = channelImgs[numImages - 1];
+      var imgWidth = resolution == null ? oImg.width : resolution[0];
+      var imgHeight = resolution == null ? oImg.height : resolution[1];
+      var finalZoom = Math.min(canvas.height / imgHeight, canvas.width / imgWidth);
+      calculateZoomIndicator(finalZoom);
+      canvas.setZoom(finalZoom);
+      var vpt = canvas.viewportTransform;
+      vpt[4] = canvas.height / imgHeight < canvas.width / imgWidth ? (canvas.width / 2) * finalZoom : 0;
+      vpt[5] = canvas.height / imgHeight > canvas.width / imgWidth ? (canvas.height / 2) * finalZoom : 0;
+      canvas.renderAll();
+    }
+  }
+
+  function calculateZoomIndicator(zoomLevel) {
+    if (pixelToMicron != 0) {
+      var microns = (10 / zoomLevel) * pixelToMicron;
+      var magnitude =  Math.floor(Math.log(microns) / Math.LN10 + 0.000000001);
+      $("#zoom-value").html(Math.pow(10, magnitude + 1) + "µ");
+      $("#zoom-bar").css("width", parseInt(Math.pow(10, magnitude + 2) / microns) + "px");
+    } else {
+      $("#zoom-value").html(Math.floor(zoomLevel * 100) + "%");
+      $("#zoom-bar").css("display", "none");
+    }
+  }
+
+  function toggleAllChannels(checkbox) {
+    if (!retexturing) {
+      if ($(checkbox).html() == "check_box_outline_blank") {
+        $(checkbox).html("check_box");
+        for (i = 0; i < channelImgs.length; i++) {
+          if (channelImgs[i] != null) {
+            channelImgs[i].opacity = 1;
+            if (resolution != null) {
+              if (channelImgsTiles[i] !=  null && channelImgsLevel[i] != maxzdim) {
+                channelImgs[i].opacity = 0;
+                var currChannelLevel = channelImgsLevel[i];
+                var pyramidIndex = 0;
+                if (currChannelLevel > 0) {
+                  var currzdim = maxzdim;
+                  while (currChannelLevel * 2 < currzdim) {
+                    currzdim = currzdim / 2;
+                    pyramidIndex = pyramidIndex + 1;
+                  }
+                } else {
+                  pyramidIndex = 4;
+                }
+                for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
+                  for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
+                    tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
+                    if (channelImgsTiles[i][tile_index] != null) {
+                      channelImgsTiles[i][tile_index].opacity = 1.0;
+                    }
+                  }
+                }
+              }
+            } 
+            $("#checkChannel" + (i + 1)).html("check_box");
+          }
+        }   
+        canvas.renderAll();
+      } else {
+        $(checkbox).html("check_box_outline_blank");
+        for (i = 0; i < channelImgs.length; i++) {
+          if (channelImgs[i] != null) {
+            channelImgs[i].opacity = 0;   
+            if (resolution != null) {
+              if (channelImgsTiles[i] !=  null) {
+                for (j = 0; j < channelImgsTiles[i].length; j++) {
+                  if (channelImgsTiles[i][j] != null) {
+                    channelImgsTiles[i][j].opacity = 0;
+                  }
+                }
+              }
+            }      
+            $("#checkChannel" + (i + 1)).html("check_box_outline_blank");
+          }
+        }
+        canvas.renderAll();  
+      }
+    }
+  }
+
+  function toggleChannel(checkbox, index) {
+    if (!retexturing) {
+      if ($(checkbox).html() == "check_box_outline_blank") {
+        $(checkbox).html("check_box");
+        channelImgs[index - 1].opacity = 1;
+        if (resolution != null) {
+          var currChannelLevel = channelImgsLevel[index - 1];
+          if (currChannelLevel != null && currChannelLevel != maxzdim) {
+            channelImgs[index - 1].opacity = 0;
+            var pyramidIndex = 0;
+            if (currChannelLevel > 0) {
+              var currzdim = maxzdim;
+              while (currChannelLevel * 2 < currzdim) {
+                currzdim = currzdim / 2;
+                pyramidIndex = pyramidIndex + 1;
+              }
+            } else {
+              pyramidIndex = 4;
+            }
+            for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
+              for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
+                tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
+                if (channelImgsTiles[index - 1][tile_index] != null) {
+                  channelImgsTiles[index - 1][tile_index].opacity = 1.0;
+                }
+              }
+            }
+          }
+        } 
+        canvas.renderAll();        
+      } else {
+        $(checkbox).html("check_box_outline_blank");
+        channelImgs[index - 1].opacity = 0; 
+        if (resolution != null) {
+          if (channelImgsTiles[index - 1] !=  null) {
+            for (j = 0; j < channelImgsTiles[index - 1].length; j++) {
+              if (channelImgsTiles[index - 1][j] != null) {
+                channelImgsTiles[index - 1][j].opacity = 0;
+              }
+            }
+          }
+        }  
+        canvas.renderAll();  
+      }
+    }
+  }
+
+  function deleteChannel(index) {
+    if (!retexturing) {
+      $( "#channelName" + index).remove();
+      $( "#checkChannel" + index).remove();
+      $( "#color-picker" + index).parent().remove();
+      $( "#sliderChannelIntensity" + index).remove();
+      $( "#sliderChannelIntensityValue" + index).remove();
+      $( "#sliderChannelTransparency" + index).remove();
+      $( "#sliderChannelTransparencyValue" + index).remove();
+      $( "#cancelChannel" + index).remove();
+      canvas.remove(channelImgs[index - 1]);
+      delete channelImgs[index - 1];
+      if (resolution != null) {
+        delete channelImgsLevel[index - 1];
+        var k = 0;
+        while (k < tilesToRetexture.lenght) {
+          var imgId = "img" + (index - 1) + "_";
+          if (tilesToRetexture[k].startsWith(imgId)) {
+            tilesToRetexture.splice(k, 1);
+          } else {
+            k = k + 1;
+          }
+        }
+        for (j = 0; j < channelImgsTiles[index - 1].length; j++) {
+          if (channelImgsTiles[index - 1][j] != null) {          
+            canvas.remove(channelImgsTiles[index - 1][j]);
+            delete channelImgsTiles[index - 1][j];
+          }
+        }
+        delete channelImgsTiles[index - 1];
+      }  
+      canvas.renderAll();  
+    }
+  }
+
+  function addChannel() {
+    if (!retexturing) {
+      var csvRow = document.getElementById("add-channel-select").value;
+      addChannelControls(numImages + 1, getImageURL(csvData[csvRow][0]), csvData[csvRow][1], csvData[csvRow][2], csvData[csvRow][3], csvData[csvRow][4]);
+      channelImgs.push(numImages);
+      if (resolution != null) {
+        channelImgsTiles.push(Array(2048));
+        channelImgsLevel.push(maxzdim);
+      }
+      loadChannelImage(numImages, getImageURL(csvData[csvRow][0]), csvData[csvRow][1], csvData[csvRow][2], csvData[csvRow][3], csvData[csvRow][4]);  
+      if (resolution != null) {
+        retexture_image(numImages);
+      }
+      numImages = numImages + 1;
+    }
+  }
+  
+  function changeColorChannel(index, newColor) {
+    if (!retexturing) {
+      $( "#channelCommand" + index).css("color", newColor);
+      $( "#sliderChannelIntensity" + (index) + " .ui-slider-handle" ).css('background', newColor);
+      $( "#sliderChannelIntensity" + (index) + " .ui-slider-range" ).css('background', newColor);
+      $( "#sliderChannelTransparency" + (index) + " .ui-slider-handle" ).css('background', newColor);
+      $( "#sliderChannelTransparency" + (index) + " .ui-slider-range" ).css('background', newColor);
+      channelImgs[index -1].v_color = String(newColor);
+      adjustImage(channelImgs[index - 1]);
+      if (resolution != null) {
+        if (channelImgsTiles[index - 1] !=  null) {
+          for (j = 0; j < channelImgsTiles[index - 1].length; j++) {
+            if (channelImgsTiles[index - 1][j] != null) {      
+              channelImgsTiles[index -1][j].v_color = channelImgs[index -1].v_color;         
+              adjustImage(channelImgsTiles[index - 1][j]);    
+            }
+          }
+        }
+      } 
+      canvas.renderAll();
+    }
+  }
+
+  function autoAdjustAllChannels(checkbox) {
+    if (!retexturing) {
+      for (i = 0; i < channelImgs.length; i++) {
+        if (channelImgs[i] != null) {
+          autoAdjustChannel(i + 1, false);
+        }
+      }  
+      canvas.renderAll();  
+    }
+  }
+  
+  function autoAdjustChannel(index, redraw) {
+    if (!retexturing) {
+      channelImgs[index -1].v_minvalue = channelImgs[index -1].v_minvalue_optimal;
+      channelImgs[index -1].v_maxvalue = channelImgs[index -1].v_maxvalue_optimal;
+      var sliderIntensityMin = Math.floor(channelImgs[index -1].v_minvalue * parseFloat(bitDepth));
+      var sliderIntensityMax = Math.min(bitDepth, Math.floor(parseFloat(bitDepth) / channelImgs[index -1].v_maxvalue));
+      $( "#sliderChannelIntensity" + index ).slider( "option", "values", [ sliderIntensityMin, sliderIntensityMax ] );
+      $( "#sliderChannelIntensityValue" + index ).html( sliderIntensityMin + " - " + sliderIntensityMax);
+      adjustImage(channelImgs[index -1]);
+      if (resolution != null) {
+        if (channelImgsTiles[index - 1] !=  null) {
+          for (j = 0; j < channelImgsTiles[index - 1].length; j++) {
+            if (channelImgsTiles[index - 1][j] != null) {           
+              channelImgsTiles[index -1][j].v_minvalue = channelImgs[index -1].v_minvalue_optimal;
+              channelImgsTiles[index -1][j].v_maxvalue = channelImgs[index -1].v_maxvalue_optimal;    
+              adjustImage(channelImgsTiles[index -1][j]);
+            }
+          }
+        }
+      } 
+      if (redraw) {
+        canvas.renderAll();
+      }
+    }
+  }
+  
+  fabric.Image.filters.MakeTransparent = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
+    type: 'MakeTransparent',
+    fragmentSource: 
+      'precision highp float;\n' +
+      'uniform sampler2D uTexture;\n' +
+      'uniform float uTransparencyFilter;\n' +
+      'uniform float uTransparency;\n' +
+      'varying vec2 vTexCoord;\n' +
+      'void main() {\n' +
+      'vec4 color = texture2D(uTexture, vTexCoord);\n' +
+      'if (uTransparencyFilter == 1.0) {' +
+      '    color.a = max(color.r, max(color.g, color.b)) * uTransparency;\n' +
+      '} else {' +
+      '    color.a = uTransparency;\n' +
+      '}' +
+      'gl_FragColor = color;\n' +
+    '}',
+
+    getUniformLocations: function(gl, program) {
+      return {
+        uTransparencyFilter: gl.getUniformLocation(program, 'uTransparencyFilter'),
+        uTransparency: gl.getUniformLocation(program, 'uTransparency'),
+      };
+    },
+
+    sendUniformData: function(gl, uniformLocations) {
+      gl.uniform1f(uniformLocations.uTransparencyFilter, this.v_transparency_filter);
+      gl.uniform1f(uniformLocations.uTransparency, this.v_transparency);
+    },
+
+    applyTo2d: function(options) {
+      var imageData = options.imageData,
+      data = imageData.data, i, len = data.length;
+      if (v_transparency_filter == 1.0) {
+        for (i = 0; i < len; i += 4) {
+          data[i + 3] = max(data[i], max(data[i + 1], data[i + 2])) * this.v_transparency;
+        }
+      } else {
+        data[i + 3] = bitDepth * this.v_transparency;
+      }
+    }
+  });
+
+  fabric.Image.filters.MakeTransparent.fromObject = fabric.Image.filters.BaseFilter.fromObject;
+
+  fabric.Image.filters.ClipPixelRange = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
+    type: 'ClipPixelRange',
+    fragmentSource: 
+      'precision highp float;\n' +
+      'uniform sampler2D uTexture;\n' +
+      'uniform float uMinvalue;\n' +
+      'uniform float uMaxvalue;\n' +
+      'varying vec2 vTexCoord;\n' +
+      'void main() {\n' +
+      'vec4 color = texture2D(uTexture, vTexCoord);\n' +
+      'if (color.r < uMinvalue) {' +
+      '    color.r = 0.0;' +
+      '} else {' +
+      '    color.r = min(1.0, color.r * uMaxvalue);' +
+      '}' +
+      'if (color.g < uMinvalue) {' +
+      '    color.g = 0.0;' +
+      '} else {' +
+      '    color.g = min(1.0, color.g * uMaxvalue);' +
+      '}' +
+      'if (color.b < uMinvalue) {' +
+      '    color.b = 0.0;' +
+      '} else {' +
+      '    color.b = min(1.0, color.b * uMaxvalue);' +
+      '}' +
+      'gl_FragColor = color;\n' +
+    '}',
+
+    getUniformLocations: function(gl, program) {
+      return {
+        uMinvalue: gl.getUniformLocation(program, 'uMinvalue'),
+        uMaxvalue: gl.getUniformLocation(program, 'uMaxvalue'),
+      };
+    },
+
+    sendUniformData: function(gl, uniformLocations) {
+      gl.uniform1f(uniformLocations.uMinvalue, this.v_minvalue);
+      gl.uniform1f(uniformLocations.uMaxvalue, this.v_maxvalue);
+    },
+
+    applyTo2d: function(options) {
+      var imageData = options.imageData,
+      data = imageData.data, i, len = data.length;
+      for (i = 0; i < len; i += 4) {
+        if (data[i] < this.minvalue) {
+          data[i] = 0;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+        } else {
+          data[i] = data[i] * bitDepth / this.maxvalue;
+          data[i + 1] = data[i + 1] * bitDepth / this.v_maxvalue;
+          data[i + 2] = data[i + 2] * bitDepth / this.v_maxvalue;
+        }
+      }
+    }
+  });
+
+  fabric.Image.filters.ClipPixelRange.fromObject = fabric.Image.filters.BaseFilter.fromObject;
+
+  var canvas = new fabric.Canvas('canvas-images');
+  canvas.setDimensions({
+    width: $('#canvas-div').width(),
+    height: $('#canvas-div').height(),
+    imageSmoothingEnabled: false
+  });
+  canvas.isDragging = false;
+  canvas.selection = true;
+  var channelImgs = [];
+  var channelImgsTiles = [];
+  var channelImgsLevel = [];
+  var numImages = 0;
+  var sliderTimeout = 0;
+  var lastCanvasWidth = canvas.width;
+  var lastCanvasHeight = canvas.height;
+
+  var retexturing = false;
+  var currentTile = "";
+  var imgLevelRetextured = [];
+  var tilesToRetexture = []; 
+  var pyramidInfo = [[2,0], [4,4], [8,20], [16,84], [32,340]]; 
+
+
+  function retexture_tiles(){
+    if (!retexturing && tilesToRetexture.length > 0) {
+      document.getElementById("retexturing-indicator").style.display = "block";
+      var texturedImage = tilesToRetexture[0];
+      (function(texturedImage) {
+        var imageIndex = parseInt(texturedImage.split("_")[0].replace('img', ''));
+        if (channelImgs[imageIndex] != null) {
+          if (channelImgs[imageIndex].filters != null) {
+            var imageURL = channelImgs[imageIndex].csv_image_url;
+            imageURL = imageURL.substring(0, imageURL.lastIndexOf(".")) + texturedImage.substring(texturedImage.split("_")[0].length) + imageURL.substring(imageURL.length - 4);
+            var imgElement = fabric.Image.fromURL(imageURL, function(oImg) {
+              if (oImg == null) {
+                retexture_tiles();
+              } else {
+                if (channelImgs[imageIndex] != null) {
+                  oImg.csv_image_url = channelImgs[imageIndex].csv_image_url;
+                  oImg.csv_img_name = channelImgs[imageIndex].csv_img_name;
+                  oImg.csv_img_clip = channelImgs[imageIndex].csv_img_clip;
+                  oImg.csv_img_transparency = channelImgs[imageIndex].csv_img_transparency;
+                  oImg.csv_img_color = channelImgs[imageIndex].csv_img_color;
+                  oImg.v_minvalue_optimal = channelImgs[imageIndex].v_minvalue_optimal;
+                  oImg.v_maxvalue_optimal = channelImgs[imageIndex].v_maxvalue_optimal;
+                  oImg.v_minvalue = channelImgs[imageIndex].v_minvalue;
+                  oImg.v_maxvalue = channelImgs[imageIndex].v_maxvalue;
+                  oImg.v_transparency_filter = channelImgs[imageIndex].v_transparency_filter;
+                  oImg.v_transparency = channelImgs[imageIndex].v_transparency;
+                  oImg.v_color = channelImgs[imageIndex].v_color;                  
+                  var zdim = parseInt(texturedImage.split("_")[1].replace('z', ''));
+                  var x = parseInt(texturedImage.split("_")[2].replace('x', ''));
+                  var y = parseInt(texturedImage.split("_")[3].replace('y', ''));
+                  var pyramidIndex = 0;
+                  var currzdim = maxzdim;
+                  while (zdim / 1024 != currzdim) {
+                    currzdim = currzdim / 2;
+                    pyramidIndex = pyramidIndex + 1;
+                  }
+                  tile_index = pyramidInfo[pyramidIndex][1] + (x / zdim) * pyramidInfo[pyramidIndex][0] + (y / zdim);
+                  channelImgsTiles[imageIndex][tile_index] = oImg;
+                  oImg.scaleToWidth(zdim);
+                  oImg.scaleToHeight(zdim);
+                  oImg.set({ left: x, top: y });
+                  canvas.add(oImg);
+                  oImg.set('selectable', false);
+                  oImg.opacity = 0.0;
+                  oImg.moveTo((imageIndex + 1) * 2048) + tile_index;
+                  adjustImage(oImg);
+                  if (texturedImage.indexOf("_x0_y0") > 0) {
+                    imgLevelRetextured.push(imageIndex + "_" + zdim);
+                  }
+                }
+                tilesToRetexture.splice(0, 1);
+                retexture_tiles();
+              }
+            });
+          } else {
+            setTimeout(retexture_tiles, 50);
+          }
+        } else {
+          tilesToRetexture.splice(0, 1);
+          retexture_tiles();
+        }
+      })(texturedImage);
+    } else {
+      document.getElementById("retexturing-indicator").style.display = "none";
+      setTimeout(retexture_tiles, 50);
+    }
+  }
+
+  function render_deepest_level() {
+    for (i = 0; i < channelImgsLevel.length; i++) {
+      var currChannelLevel = channelImgsLevel[i]
+      if (currChannelLevel != null && currChannelLevel * 2 > minTileResolution / 1024) {
+        zdim = 1024 * (currChannelLevel);
+        if (imgLevelRetextured.includes(i + "_" + (zdim / 2)) || tilesToRetexture.length == 0) {
+          retexturing = true;
+          var pyramidIndex = 0;
+          var currzdim = maxzdim;
+          while (zdim / 1024 != currzdim) {
+            currzdim = currzdim / 2;
+            pyramidIndex = pyramidIndex + 1;
+          }
+          for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
+            for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
+              tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
+              if (channelImgsTiles[i][tile_index] != null) {
+                channelImgsTiles[i][tile_index].opacity = 1.0;
+              }
+            }
+          }
+          if (currChannelLevel == maxzdim) {
+            channelImgs[i].opacity = 0.0;
+          } else {
+            pyramidIndex = pyramidIndex - 1;
+            for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
+              for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
+                tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;           
+                if (channelImgsTiles[i][tile_index] != null) {
+                  channelImgsTiles[i][tile_index].opacity = 0.0;
+                  canvas.remove(channelImgsTiles[i][tile_index]);
+                  delete channelImgsTiles[i][tile_index];
+                }
+              }
+            }
+          }
+          channelImgsLevel[i] = Math.floor(currChannelLevel / 2);
+          canvas.renderAll();
+          var index = imgLevelRetextured.indexOf(i + "_" + (zdim / 2));
+          if (index > -1) {
+            imgLevelRetextured.splice(index, 1);
+          }
+
+          retexturing = false;
+        }
+      }
+    }
+
+    setTimeout(render_deepest_level, 500);
+  }
+
+  function retexture_image(img_index) {
+    var curr_maxzdim = maxzdim;
+    while (curr_maxzdim > 0 + (minTileResolution / 1024) - 1) {
+      var zdim = 1024 * curr_maxzdim;
+      var num_tiles_x = Math.floor(resolution[0] / zdim) + (resolution[0] % zdim > 0 ? 1 : 0);
+      var num_tiles_y = Math.floor(resolution[1] / zdim) + (resolution[1] % zdim > 0 ? 1 : 0);
+      for (let i = 0; i < num_tiles_x; i++) {
+        for (let j = 0; j < num_tiles_y; j++) {
+          var xdim = i * zdim;
+          var ydim = j * zdim;
+          var currentTile = "img" + img_index+ "_z" + zdim + "_x" + xdim + "_y" + ydim;
+          tilesToRetexture.push(currentTile);
+        }
+      }
+      curr_maxzdim = Math.floor(curr_maxzdim / 2);
+    }
+  }
+
+  function retexture_images() {
+    var curr_maxzdim = maxzdim;
+    while (curr_maxzdim > 0 + (minTileResolution / 1024) - 1) {
+      var zdim = 1024 * curr_maxzdim;
+      var num_tiles_x = Math.floor(resolution[0] / zdim) + (resolution[0] % zdim > 0 ? 1 : 0);
+      var num_tiles_y = Math.floor(resolution[1] / zdim) + (resolution[1] % zdim > 0 ? 1 : 0);
+      for (let i = 0; i < num_tiles_x; i++) {
+        for (let j = 0; j < num_tiles_y; j++) {
+          var xdim = i * zdim;
+          var ydim = j * zdim;
+          var currentTile = "img" + (numImages - 1) + "_z" + zdim + "_x" + xdim + "_y" + ydim;
+          for (let k = 0; k < channelImgs.length; k++) {
+            if (channelImgs[k] != null) {
+              filename = "img" + k + "_z" + zdim + "_x" + xdim + "_y" + ydim;
+              tilesToRetexture.push(filename);
+            }
+          }
+        }
+      }
+      curr_maxzdim = Math.floor(curr_maxzdim / 2);
+    }
+  }
+
+  function addChannelControls(img_index, img_url, img_name, img_clip, img_transparency, img_color) {
+    var channelControlsHTML = "<div id=\"channelName" + img_index + "\" class=\"channel-name\">" +
+                                "<p>" + img_name + "</p>" + 
+                                "<a href=\"" + img_url + "\" target=\"_blank\" download><span class=\"material-symbols-outlined channel-download\" title=\"Download image\">download</span></a>" +
+                                "<span class=\"material-symbols-outlined channel-auto interactive-item\" onclick=\"autoAdjustChannel(" + img_index + ", true);\" title=\"Apply min/max\">exposure</span></div>" +
+                                "<div id=\"channelCommand" + img_index + "\" style=\"color:" + img_color + "\">" +
+                                  "<span id=\"checkChannel" + img_index + "\" class=\"material-symbols-outlined channel-check interactive-item\" onclick=\"toggleChannel(this, " + img_index + ");\">check_box</span>";
+    if (img_color != "" && img_color != "no") {
+      channelControlsHTML = channelControlsHTML + "<div id=\"color-picker-wrapper\"><input type=\"color\" value=\"" + img_color + "\" id=\"color-picker" + img_index + "\"></div>";
+    } else {
+      channelControlsHTML = channelControlsHTML + "&nbsp;";
+    }
+    var sliderIntervalMin = 0;
+    var sliderIntervalMax = bitDepth;
+    if (img_clip != "" && img_clip != "no") {
+      sliderIntervalMin = parseInt(img_clip.split("-")[ 0 ]);
+      sliderIntervalMax = parseInt(img_clip.split("-")[ 1 ]);
+    }
+    var sliderTransparencyValue = 100;
+    if (img_transparency != "" && img_transparency != "no") {
+      sliderTransparencyValue = Math.floor(img_transparency * 100.0);
+    } 
+    channelControlsHTML = channelControlsHTML + "<div id=\"sliderChannelIntensity" + img_index + "\" class=\"channel-slider\"></div><span id=\"sliderChannelIntensityValue" + img_index + "\" class=\"channel-range\">" + sliderIntervalMin + " - " + sliderIntervalMax + "</span>" +
+                                  "<div id=\"sliderChannelTransparency" + img_index + "\" class=\"channel-slider\"></div><span id=\"sliderChannelTransparencyValue" + img_index + "\" class=\"channel-range\">" + sliderTransparencyValue + "%</span>";
+    channelControlsHTML = channelControlsHTML + "<span id=\"cancelChannel" + img_index + "\" class=\"material-symbols-outlined channel-delete interactive-item\" onclick=\"deleteChannel(" + img_index + ");\">close</span></div>"
+    $("#channel-list").append(channelControlsHTML);
+    $( "#sliderChannelIntensity" + (img_index) ).slider({
+      range: true,
+      min: 0,
+      max: bitDepth,
+      values: [ 0, bitDepth ],
+      slide: function( event, ui ) {
+        if (!retexturing) {
+          var slideId = parseInt(this.id.replace("sliderChannelIntensity", ""));
+          $( "#sliderChannelIntensityValue" + slideId ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ]);
+          if (Date.now() > sliderTimeout + sliderInterval) {
+            sliderTimeout = Date.now();
+            channelImgs[slideId -1].v_minvalue = parseFloat(ui.values[ 0 ]) / parseFloat(bitDepth);
+            channelImgs[slideId -1].v_maxvalue = parseFloat(bitDepth) / parseFloat(ui.values[ 1 ]);
+            adjustImage(channelImgs[slideId -1]);
+            if (resolution != null) {
+              for (j = 0; j < channelImgsTiles[slideId - 1].length; j++) {
+                if (channelImgsTiles[slideId - 1][j] != null) {          
+                  channelImgsTiles[slideId -1][j].v_minvalue = channelImgs[slideId -1].v_minvalue;
+                  channelImgsTiles[slideId -1][j].v_maxvalue = channelImgs[slideId -1].v_maxvalue;
+                  adjustImage(channelImgsTiles[slideId - 1][j]);
+                }
+              }
+            } 
+            canvas.renderAll();
+          }
+        }
+      }
+    });
+    $( "#sliderChannelTransparency" + (img_index) ).slider({
+      min: 0,
+      max: 100,
+      value: 100,
+      slide: function( event, ui ) {
+        if (!retexturing) {
+          var slideId = parseInt(this.id.replace("sliderChannelTransparency", ""));
+          $( "#sliderChannelTransparencyValue" + slideId ).html(ui.value + "%");
+          if (Date.now() > sliderTimeout + sliderInterval) {
+            sliderTimeout = Date.now();
+            channelImgs[slideId -1].v_transparency = ui.value / 100.0;
+            adjustImage(channelImgs[slideId -1]);
+            if (resolution != null) {
+              for (j = 0; j < channelImgsTiles[slideId - 1].length; j++) {
+                if (channelImgsTiles[slideId - 1][j] != null) {          
+                  channelImgsTiles[slideId -1][j].v_transparency = channelImgs[slideId -1].v_transparency;
+                  adjustImage(channelImgsTiles[slideId - 1][j]);
+                }
+              }
+            } 
+            canvas.renderAll();
+          }
+        }
+      }
+    });
+    if (img_color != "" && img_color != "no") {
+      $( "#color-picker" + img_index ).on( "change", function() {
+        $( this ).parent().css("background", this.value);
+        changeColorChannel(parseInt(this.id.replace("color-picker", "")), this.value);  
+      });
+      $( "#color-picker" + img_index ).parent().css("background", $( "#color-picker" + img_index ).val());
+      $( "#sliderChannelIntensity" + img_index + " .ui-slider-handle" ).css('background', img_color);
+      $( "#sliderChannelIntensity" + img_index + " .ui-slider-range" ).css('background', img_color);
+      $( "#sliderChannelTransparency" + img_index + " .ui-slider-handle" ).css('background', img_color);
+      $( "#sliderChannelTransparency" + img_index + " .ui-slider-range" ).css('background', img_color);
+    } else {
+      $( "#color-picker" + img_index ).parent().css("background", "#ffffff");
+      $( "#sliderChannelIntensity" + img_index + " .ui-slider-handle" ).css('background', "#ffffff");
+      $( "#sliderChannelIntensity" + img_index + " .ui-slider-range" ).css('background', "#ffffff");
+      $( "#sliderChannelTransparency" + img_index + " .ui-slider-handle" ).css('background', "#ffffff");
+      $( "#sliderChannelTransparency" + img_index + " .ui-slider-range" ).css('background', "#ffffff");
+    }
+  }
+
+  function adjustImage(img) { 
+    img.filters = []; 
+    var clippr = new fabric.Image.filters.ClipPixelRange({
+      v_minvalue: img.v_minvalue,
+      v_maxvalue: img.v_maxvalue
+    });
+    img.filters.push(clippr);
+    transparency = new fabric.Image.filters.MakeTransparent({
+      v_transparency_filter: img.v_transparency_filter,
+      v_transparency: img.v_transparency
+    });
+    img.filters.push(transparency);
+    if (img.v_color != "no") {
+      var blcol = new fabric.Image.filters.BlendColor({
+        color: img.v_color,
+        mode: 'tint',
+        alpha: 1.0
+      });
+      img.filters.push(blcol);
+    } 
+    img.applyFilters();    
+  }
+  
+  function calculateMinMax(img, index) {
+    var ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    img_raw = img.getElement();
+    ctx.drawImage(img_raw, 0, 0);
+    img_raw_data = ctx.getImageData(0, 0, img_raw.width, img_raw.height);
+    var listpositivepixel = [];
+    for (let i = 0; i < img_raw_data.data.length; i += 4) {
+      if (img_raw_data.data[i] > 0) {
+        listpositivepixel.push(img_raw_data.data[i]);
+      }
+    }
+    listpositivepixel.sort(d3.ascending);
+    img.v_minvalue_optimal = parseFloat(Math.floor(d3.quantile(listpositivepixel, 0.01)) / parseFloat(bitDepth));
+    img.v_maxvalue_optimal = parseFloat(bitDepth) / parseFloat(Math.floor(d3.quantile(listpositivepixel, 0.99)));
+  }
+
+  function loadChannelImage(img_index, img_url, img_name, img_clip, img_transparency, img_color) {
+    (function(img_index, img_url) {
+      final_img_url = resolution == null ? img_url : img_url.substring(0, img_url.lastIndexOf(".")) + "_base" + img_url.substring(img_url.lastIndexOf("."));
+      var imgElement = fabric.Image.fromURL(final_img_url, function(oImg) {
+        oImg.csv_image_url = img_url;
+        oImg.csv_img_name = img_name;
+        oImg.csv_img_clip = img_clip;
+        oImg.csv_img_transparency = img_transparency;
+        oImg.csv_img_color = img_color;
+        calculateMinMax(oImg, img_index);
+        if (img_clip != "" && img_clip != "no") {
+          oImg.v_minvalue = parseFloat(img_clip.split("-")[ 0 ]) / parseFloat(bitDepth);
+          oImg.v_maxvalue = parseFloat(bitDepth) / parseFloat(img_clip.split("-")[ 1 ]);
+        } else {
+          oImg.v_minvalue = 0.0
+          oImg.v_maxvalue = 1.0;
+        }
+        if (img_transparency != "" && img_transparency != "no") {
+          oImg.v_transparency_filter = 1.0;
+          oImg.v_transparency = parseFloat(img_transparency);
+        } else {
+          oImg.v_transparency_filter = 0.0;
+          oImg.v_transparency = 1.0;
+        }
+        if (img_color != "" && img_color != "no") {
+          oImg.v_color = String(img_color);
+        } else {
+          oImg.v_color = "no";
+        }
+        channelImgs[img_index] = oImg;
+        if (resolution != null) {
+          oImg.scaleToWidth(resolution[0]);
+          oImg.scaleToHeight(resolution[1]);
+        }
+        canvas.add(oImg);
+        oImg.set('selectable', false);
+        oImg.moveTo((img_index + 1) * 2048);
+        adjustImage(oImg);
+        if (channelImgs[0] == oImg) {
+          var imgWidth = resolution == null ? oImg.width : resolution[0];
+          var imgHeight = resolution == null ? oImg.height : resolution[1];
+          var finalZoom = Math.min(canvas.height / imgHeight, canvas.width / imgWidth);
+          calculateZoomIndicator(finalZoom);
+          canvas.setZoom(finalZoom);
+          var vpt = canvas.viewportTransform;
+          vpt[4] += canvas.height / imgHeight < canvas.width / imgWidth ? (canvas.width / 2) * finalZoom : 0;
+          vpt[5] += canvas.height / imgHeight > canvas.width / imgWidth ? (canvas.height / 2) * finalZoom : 0;
+          canvas.renderAll();
+        }
+      }, { crossOrigin: 'Anonymous' });
+    })(img_index, img_url);
+  }
+
+  function activateCanvas() {    
+    canvas.on('mouse:wheel', function(opt) {
+      if (!retexturing) {
+        var delta = opt.e.deltaY;
+        var zoom = this.getZoom();
+        zoom *= 0.999 ** delta;
+        if (zoom > 20) zoom = 20;
+        if (zoom < 0.05) zoom = 0.05;
+        calculateZoomIndicator(zoom);
+        this.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+      }
+    });
+    canvas.on('mouse:down', function(opt) {
+      if (!retexturing) {
+        var evt = opt.e;
+        this.isDragging = true;
+        this.lastPosX = evt.clientX;
+        this.lastPosY = evt.clientY;
+      }
+    });
+    canvas.on('mouse:move', function(opt) {
+      if (!retexturing) {
+        if (this.isDragging) {
+          var e = opt.e;
+          var vpt = this.viewportTransform;
+          vpt[4] += e.clientX - this.lastPosX;
+          vpt[5] += e.clientY - this.lastPosY;
+          this.renderAll();
+          this.lastPosX = e.clientX;
+          this.lastPosY = e.clientY;
+        }
+      }
+    });
+    canvas.on('mouse:up', function(opt) {
+      if (!retexturing) {
+        this.setViewportTransform(this.viewportTransform);
+        this.isDragging = false;
+        this.selection = true;
+      }
+    });
+  }
+  
+  function getImageURL(url) {
+    try {
+        const urlObject = new URL(url);
+        return url;
+    } catch (error) {
+        return imageBaseURL + "/" + url;
+    }
+  }
+
+  var searchParams = new URLSearchParams(window.location.search)
+  var csvData = [];
+  var csvURL = window.location.origin + window.location.pathname.replace("ellviewer.html", "") + "metadata/metadata.csv"
+  var imageBaseURL = window.location.origin + window.location.pathname.replace("ellviewer.html", "") + "images/"
+  if (searchParams.has('csv')) {
+    csvURL = searchParams.get('csv');
+  }
+  var bitDepth = 255;
+  if (searchParams.has('bitDepth')) {
+    bitDepth = Math.floor(Math.pow(2, parseInt(searchParams.get('bitDepth'))));
+  }
+  var pixelToMicron = 0;
+  if (searchParams.has('pixelToMicron')) {
+    pixelToMicron = parseFloat(searchParams.get('pixelToMicron'));
+  }
+  var sliderInterval = 100;
+  if (searchParams.has('sliderInterval')) {
+    sliderInterval = parseInt(searchParams.get('sliderInterval'));
+  }
+  document.getElementById("retexturing-indicator").style.display = "none";
+  var resolution = null;
+  var resolution_ratio = 0;
+  var maxzdim = 1;
+  if (searchParams.has('resolution')) {
+    resolution = searchParams.get('resolution').split("x");
+    resolution_ratio = Math.max(resolution[0] / 1024.0, resolution[1] / 1024.0);
+    maxzdim = 1;
+    for (let i = 7; i >= 1; i--) {
+      if (2 ** i <= resolution_ratio) {
+        maxzdim = 2 ** i;
+        break;
+      }
+    }
+  }
+  var minTileResolution = 1024;
+  if (searchParams.has('minTileResolution')) {
+    minTileResolution = parseInt(searchParams.get('minTileResolution'));
+  }
+  
+  $.ajax({
+    url: csvURL,
+    async: false,
+    success: function (csvd) {
+      csvData = $.csv.toArrays(csvd);
+      defaultChannels = [];
+      for (let i = 1; i < csvData.length; i++) {
+        $("#add-channel-select").append("<option value=\"" + i + "\">" + csvData[i][1] + "</option>");
+        if (csvData[i][5] == "yes") {
+          defaultChannels.push(csvData[i]);
+        }
+      }
+      for (let i = 0; i < defaultChannels.length; i++) {
+        addChannelControls(numImages + 1, getImageURL(defaultChannels[i][0]), defaultChannels[i][1], defaultChannels[i][2], defaultChannels[i][3], defaultChannels[i][4])
+        channelImgs.push(numImages);
+        if (resolution != null) {
+          channelImgsTiles.push(Array(2048));
+          channelImgsLevel.push(maxzdim);
+        }
+        loadChannelImage(numImages, getImageURL(defaultChannels[i][0]), defaultChannels[i][1], defaultChannels[i][2], defaultChannels[i][3], defaultChannels[i][4]); 
+        numImages = numImages + 1; 
+      }
+      activateCanvas();
+      if (resolution != null) {
+        retexture_images();
+        setTimeout(retexture_tiles, 100);
+        render_deepest_level();
+      }
+
+      var select = document.getElementById("add-channel-select");
+      var selectChildren  = [...select.children];
+      selectChildren.sort(compareChild)
+      function compareChild(a, b){
+          const str_a = a.textContent
+          const str_b = b.textContent
+          return str_a.localeCompare(str_b)
+      }
+      select.replaceChildren(...selectChildren);
+    },
+    dataType: "text"
+  });  
+
+  function fullscreenchanged(event) {
+    canvas.setDimensions({
+      width: $('#canvas-div').width(),
+      height: $('#canvas-div').height(),
+      imageSmoothingEnabled: false
+    });    
+    var vpt = canvas.viewportTransform;
+    vpt[4] += (canvas.width - lastCanvasWidth) * canvas.getZoom();
+    vpt[5] += (canvas.height - lastCanvasHeight) * canvas.getZoom();
+    lastCanvasWidth = canvas.width;
+    lastCanvasHeight = canvas.height;
+  }
+
+  document.addEventListener("fullscreenchange", fullscreenchanged);
+</script>
+</html>
