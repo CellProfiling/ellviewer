@@ -5,12 +5,11 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = 10000000000
 image_folder = "images"
 output_folder = "pyramid"
-dest_extension = ".jpg"
 
 
 file_list = os.listdir(image_folder)
 for file in file_list:
-    file_without_extension = os.path.splitext(os.path.basename(file))[0]
+    file_without_extension, dest_extension = os.path.splitext(os.path.basename(file))
 
     image = Image.open(os.path.join(image_folder, file))
     image.save(os.path.join(output_folder, file_without_extension + dest_extension))
