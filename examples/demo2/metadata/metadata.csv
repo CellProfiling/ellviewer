@@ -1,0 +1,4 @@
+uri,name,clip,transparency,color,default
+HPA001223.jpg,HPA001223,,no,no,yes
+segmentation.png,segmentation,,1.0,no,no
+protein_bin.png,expression,,1.0,no,no
