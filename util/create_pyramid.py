@@ -13,6 +13,7 @@ for file in file_list:
     file_without_extension = os.path.splitext(os.path.basename(file))[0]
 
     image = Image.open(os.path.join(image_folder, file))
+    image.save(os.path.join(output_folder, file_without_extension + dest_extension))
     width = image.width
     height = image.height
 
