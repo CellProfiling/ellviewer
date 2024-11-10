@@ -41,7 +41,7 @@ https://images.proteinatlas.org/41082/721_D4_1_green.jpg,protein,,1.0,no,yes
 
 **Example 2: totally hosted**:
 
-- Choose a location accessible online and create `images` and `metadata` folders ( for demo purposes, this location is currently hosted in https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2 )
+- Choose a location accessible online and create `images` and `metadata` folders ( for demo purposes, this location is currently hosted in `https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2` )
 - Populate and put this `metadata.csv` (you can find the file in the `examples/demo2` repository folder) file in the `metadata` folder created above ( for demo purposes, this file is currently hosted in https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2/metadata/metadata.csv ):
 
 ```
@@ -51,8 +51,8 @@ segmentation.png,segmentation,,1.0,no,no
 protein_bin.png,expression,,1.0,no,no
 ```
 
-- Copy the images (you can find the images in the `examples/demo2/images` repository folder) to be shown inside the `images` folder ( for demo purposes, this location is currently hosted in https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2/images/ )
-- Copy the `ellviewer.html` file in the base level of the location ( for demo purposes, this location is currently hosted in https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2 )
+- Copy the images (you can find the images in the `examples/demo2/images` repository folder) to be shown inside the `images` folder ( for demo purposes, this location is currently hosted in `https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2/images/` )
+- Copy the `ellviewer.html` file in the base level of the location ( for demo purposes, this location is currently hosted in `https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2` )
 
 You can call the viewer just with the following URL: `[URL to your accessible location]/ellviewer.html` ( for demo purposes, just try https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo2/ellviewer.html )
 
