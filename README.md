@@ -3,6 +3,7 @@ Ellviewer
 
 Ellviewer (Emma Lundberg's lab viewer) is a simple online viewer to easily share your layered images. You just drop your files in any online accessible location and the static HTML viewer will take care of the rest.
 
+![Ellviewer](./doc/doc2.jpg "Ellviewer")
 
 Key features
 ------------
