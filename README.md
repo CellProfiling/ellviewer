@@ -141,3 +141,15 @@ There are additional parameters you can add to the viewer URL that affect global
 - `resolution`: mandatory for large files using the pyramid structure, this value informs about the original resolution of the images. Example: `resolution=15360x18720`
 - `minTileResolution`: mandatory for large files using the pyramid structure, this value marks the lowest tile to be retextured in the images. The possible values are [1024, 2048, 4096, 8192, 16384], and the lower the value the more precise retexturing/resolution the viewer will show per image (and the longer it will take to fully texture the image). Example: `minTileResolution=4096`
 
+
+Pyramid structure
+-----------------
+
+If you want to display large images (bigger than 2048/4096 pixels, depending on the browser) with Ellviewer, you need to use a pyramid file structure. Fortunately, is as easy as running the python script `create_pyramid.py` (located in the `util` repository folder). To run it:
+
+- Copy your original files (in the final format you want to display them in Ellviewer) into a folder
+- Set the following constants of the script:
+  - `image_folder = [the folder containing your original images]`
+  - `output_folder = [your desired output folder that will contain the pyramid files]`
+- Run the script
+- Copy the original files AND all the pyramid files under the same accessible folder for the `ellviewer.html` and `metadata.csv` to locate.
