@@ -110,7 +110,7 @@ https://lundberglab.stanford.edu/Prominent/images/20240418_d1_kid_K2110291_Scan2
 
 ![Example 3 pyramid files](./doc/doc1.jpg "Example 3 pyramid files")
 
-- You can call the viewer just with the following URL: `https://lundberglab.stanford.edu/ellviewer/ellviewer.html?csv=[URL to your accessible metadata.csv]&resolution=15360x18720&minTileResolution=4096` ( for demo purposes, just try https://lundberglab.stanford.edu/ellviewer/ellviewer.html?csv=https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo3/metadata.csv&resolution=15360x18720&minTileResolution=4096 )
+- You can call the viewer just with the following URL: `https://lundberglab.stanford.edu/ellviewer/ellviewer.html?csv=[URL to your accessible metadata.csv]&resolution=15360x18720&minTileResolution=4096` ( for demo purposes, just try https://lundberglab.stanford.edu/ellviewer/ellviewer.html?csv=https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo3/metadata.csv&pixelToMicron=0.5073077046562237&resolution=15360x18720&minTileResolution=4096 )
 
 
 File format requirements
