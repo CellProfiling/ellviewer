@@ -11,7 +11,7 @@ Key features
 - Serverless Static HMTL viewer that you don't even need to host. That allows you to put a viewer anywhere you can place a URL.
 - Zero code configuration. The behavior of the viewer is controlled by a simple CSV file. 
 - Uses regular JPG/PNG files or direct image links.
-- Adds transparency, coloring and transparency clipping on demand.
+- Adds transparency, coloring and clipping on demand.
 - Can display large images using a pyramidal file structure.
 
 
