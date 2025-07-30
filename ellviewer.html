@@ -349,7 +349,7 @@
       var vpt = canvas.viewportTransform;
       vpt[4] = canvas.height / imgHeight < canvas.width / imgWidth ? (canvas.width / 2) * finalZoom : 0;
       vpt[5] = canvas.height / imgHeight > canvas.width / imgWidth ? (canvas.height / 2) * finalZoom : 0;
-      canvas.renderAll();
+      canvas.requestRenderAll();
     }
   }
 
@@ -399,7 +399,7 @@
             $("#checkChannel" + (i + 1)).html("check_box");
           }
         }   
-        canvas.renderAll();
+        canvas.requestRenderAll();
       } else {
         $(checkbox).html("check_box_outline_blank");
         for (i = 0; i < channelImgs.length; i++) {
@@ -417,7 +417,7 @@
             $("#checkChannel" + (i + 1)).html("check_box_outline_blank");
           }
         }
-        canvas.renderAll();  
+        canvas.requestRenderAll();
       }
     }
   }
@@ -451,7 +451,7 @@
             }
           }
         } 
-        canvas.renderAll();        
+        canvas.requestRenderAll();
       } else {
         $(checkbox).html("check_box_outline_blank");
         channelImgs[index - 1].opacity = 0; 
@@ -464,7 +464,7 @@
             }
           }
         }  
-        canvas.renderAll();  
+        canvas.requestRenderAll();
       }
     }
   }
@@ -500,7 +500,7 @@
         }
         delete channelImgsTiles[index - 1];
       }  
-      canvas.renderAll();  
+      canvas.requestRenderAll();
     }
   }
 
@@ -540,7 +540,7 @@
           }
         }
       } 
-      canvas.renderAll();
+      canvas.requestRenderAll();
     }
   }
 
@@ -551,7 +551,7 @@
           autoAdjustChannel(i + 1, false);
         }
       }  
-      canvas.renderAll();  
+      canvas.requestRenderAll();
     }
   }
   
@@ -576,7 +576,7 @@
         }
       } 
       if (redraw) {
-        canvas.renderAll();
+        canvas.requestRenderAll();
       }
     }
   }
@@ -591,11 +591,10 @@
       'varying vec2 vTexCoord;\n' +
       'void main() {\n' +
       'vec4 color = texture2D(uTexture, vTexCoord);\n' +
-      'if (uTransparencyFilter == 1.0) {' +
-      '    color.a = max(color.r, max(color.g, color.b)) * uTransparency;\n' +
-      '} else {' +
-      '    color.a = uTransparency;\n' +
+      'if (uTransparencyFilter != 0.0) {' +
+      '    color.a = max(color.r, max(color.g, color.b)) * uTransparencyFilter;\n' +
       '}' +
+      'color.a = color.a * uTransparency;\n' +
       'gl_FragColor = color;\n' +
     '}',
 
@@ -614,13 +613,12 @@
     applyTo2d: function(options) {
       var imageData = options.imageData,
       data = imageData.data, i, len = data.length;
-      if (v_transparency_filter == 1.0) {
+      if (v_transparency_filter != 0.0) {
         for (i = 0; i < len; i += 4) {
-          data[i + 3] = max(data[i], max(data[i + 1], data[i + 2])) * this.v_transparency;
+          data[i + 3] = max(data[i], max(data[i + 1], data[i + 2])) * this.v_transparency_filter;
         }
-      } else {
-        data[i + 3] = bitDepth * this.v_transparency;
       }
+      data[i + 3] = bitDepth * this.v_transparency;
     }
   });
 
@@ -813,7 +811,7 @@
             }
           }
           channelImgsLevel[i] = Math.floor(currChannelLevel / 2);
-          canvas.renderAll();
+          canvas.requestRenderAll();
           var index = imgLevelRetextured.indexOf(i + "_" + (zdim / 2));
           if (index > -1) {
             imgLevelRetextured.splice(index, 1);
@@ -917,7 +915,7 @@
                 }
               }
             } 
-            canvas.renderAll();
+            canvas.requestRenderAll();
           }
         }
       }
@@ -942,7 +940,7 @@
                 }
               }
             } 
-            canvas.renderAll();
+            canvas.requestRenderAll();
           }
         }
       }
@@ -1024,12 +1022,11 @@
           oImg.v_maxvalue = 1.0;
         }
         if (img_transparency != "" && img_transparency != "no") {
-          oImg.v_transparency_filter = 1.0;
-          oImg.v_transparency = parseFloat(img_transparency);
+          oImg.v_transparency_filter = parseFloat(img_transparency);
         } else {
           oImg.v_transparency_filter = 0.0;
-          oImg.v_transparency = 1.0;
         }
+        oImg.v_transparency = 1.0;
         if (img_color != "" && img_color != "no") {
           oImg.v_color = String(img_color);
         } else {
@@ -1053,7 +1050,7 @@
           var vpt = canvas.viewportTransform;
           vpt[4] += canvas.height / imgHeight < canvas.width / imgWidth ? (canvas.width / 2) * finalZoom : 0;
           vpt[5] += canvas.height / imgHeight > canvas.width / imgWidth ? (canvas.height / 2) * finalZoom : 0;
-          canvas.renderAll();
+          canvas.requestRenderAll();
         }
       }, { crossOrigin: 'Anonymous' });
     })(img_index, img_url);
@@ -1088,7 +1085,7 @@
           var vpt = this.viewportTransform;
           vpt[4] += e.clientX - this.lastPosX;
           vpt[5] += e.clientY - this.lastPosY;
-          this.renderAll();
+          this.requestRenderAll();
           this.lastPosX = e.clientX;
           this.lastPosY = e.clientY;
         }
@@ -1127,7 +1124,7 @@
   if (searchParams.has('pixelToMicron')) {
     pixelToMicron = parseFloat(searchParams.get('pixelToMicron'));
   }
-  var sliderInterval = 100;
+  var sliderInterval = -1;
   if (searchParams.has('sliderInterval')) {
     sliderInterval = parseInt(searchParams.get('sliderInterval'));
   }
