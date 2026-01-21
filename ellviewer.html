@@ -507,13 +507,13 @@
   function addChannel() {
     if (!retexturing) {
       var csvRow = document.getElementById("add-channel-select").value;
-      addChannelControls(numImages + 1, getImageURL(csvData[csvRow][0]), csvData[csvRow][1], csvData[csvRow][2], csvData[csvRow][3], csvData[csvRow][4]);
+      addChannelControls(numImages + 1, getImageURL(csvData[csvRow][0]), csvData[csvRow][1], "visible", csvData[csvRow][2], csvData[csvRow][3], csvData[csvRow][4]);
       channelImgs.push(numImages);
       if (resolution != null) {
         channelImgsTiles.push(Array(2048));
         channelImgsLevel.push(maxzdim);
       }
-      loadChannelImage(numImages, getImageURL(csvData[csvRow][0]), csvData[csvRow][1], csvData[csvRow][2], csvData[csvRow][3], csvData[csvRow][4]);  
+      loadChannelImage(numImages, getImageURL(csvData[csvRow][0]), csvData[csvRow][1], "visible", csvData[csvRow][2], csvData[csvRow][3], csvData[csvRow][4]);
       if (resolution != null) {
         retexture_image(numImages);
       }
@@ -791,7 +791,7 @@
             for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
               tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
               if (channelImgsTiles[i][tile_index] != null) {
-                channelImgsTiles[i][tile_index].opacity = 1.0;
+                channelImgsTiles[i][tile_index].opacity = (channelImgs[i].csv_img_visible = "visible" ? 1.0 : 0.0);
               }
             }
           }
@@ -866,13 +866,13 @@
     }
   }
 
-  function addChannelControls(img_index, img_url, img_name, img_clip, img_transparency, img_color) {
+  function addChannelControls(img_index, img_url, img_name, img_visible, img_clip, img_transparency, img_color) {
     var channelControlsHTML = "<div id=\"channelName" + img_index + "\" class=\"channel-name\">" +
                                 "<p>" + img_name + "</p>" + 
                                 "<a href=\"" + img_url + "\" target=\"_blank\" download><span class=\"material-symbols-outlined channel-download\" title=\"Download image\">download</span></a>" +
                                 "<span class=\"material-symbols-outlined channel-auto interactive-item\" onclick=\"autoAdjustChannel(" + img_index + ", true);\" title=\"Apply min/max\">exposure</span></div>" +
                                 "<div id=\"channelCommand" + img_index + "\" style=\"color:" + img_color + "\">" +
-                                  "<span id=\"checkChannel" + img_index + "\" class=\"material-symbols-outlined channel-check interactive-item\" onclick=\"toggleChannel(this, " + img_index + ");\">check_box</span>";
+                                  "<span id=\"checkChannel" + img_index + "\" class=\"material-symbols-outlined channel-check interactive-item\" onclick=\"toggleChannel(this, " + img_index + ");\">" + (img_visible == "visible" ? "check_box" : "check_box_outline_blank") + "</span>";
     if (img_color != "" && img_color != "no") {
       channelControlsHTML = channelControlsHTML + "<div id=\"color-picker-wrapper\"><input type=\"color\" value=\"" + img_color + "\" id=\"color-picker" + img_index + "\"></div>";
     } else {
@@ -1004,12 +1004,13 @@
     img.v_maxvalue_optimal = parseFloat(bitDepth) / parseFloat(Math.floor(d3.quantile(listpositivepixel, 0.99)));
   }
 
-  function loadChannelImage(img_index, img_url, img_name, img_clip, img_transparency, img_color) {
+  function loadChannelImage(img_index, img_url, img_name, img_visible, img_clip, img_transparency, img_color) {
     (function(img_index, img_url) {
       final_img_url = resolution == null ? img_url : img_url.substring(0, img_url.lastIndexOf(".")) + "_base" + img_url.substring(img_url.lastIndexOf("."));
       var imgElement = fabric.Image.fromURL(final_img_url, function(oImg) {
         oImg.csv_image_url = img_url;
         oImg.csv_img_name = img_name;
+        oImg.csv_img_visible = img_visible;
         oImg.csv_img_clip = img_clip;
         oImg.csv_img_transparency = img_transparency;
         oImg.csv_img_color = img_color;
@@ -1032,6 +1033,7 @@
         } else {
           oImg.v_color = "no";
         }
+        oImg.opacity = (img_visible == "visible" ? 1 : 0);
         channelImgs[img_index] = oImg;
         if (resolution != null) {
           oImg.scaleToWidth(resolution[0]);
@@ -1048,8 +1050,8 @@
           calculateZoomIndicator(finalZoom);
           canvas.setZoom(finalZoom);
           var vpt = canvas.viewportTransform;
-          vpt[4] += canvas.height / imgHeight < canvas.width / imgWidth ? (canvas.width / 2) * finalZoom : 0;
-          vpt[5] += canvas.height / imgHeight > canvas.width / imgWidth ? (canvas.height / 2) * finalZoom : 0;
+          vpt[4] = canvas.width / 2 - (imgWidth * finalZoom) / 2;
+          vpt[5] = 0 + canvas.height / 2 - (imgHeight * finalZoom) / 2;
           canvas.requestRenderAll();
         }
       }, { crossOrigin: 'Anonymous' });
@@ -1156,18 +1158,18 @@
       defaultChannels = [];
       for (let i = 1; i < csvData.length; i++) {
         $("#add-channel-select").append("<option value=\"" + i + "\">" + csvData[i][1] + "</option>");
-        if (csvData[i][5] == "yes") {
+        if (csvData[i][5] == "yes" || csvData[i][5] == "visible") {
           defaultChannels.push(csvData[i]);
         }
       }
       for (let i = 0; i < defaultChannels.length; i++) {
-        addChannelControls(numImages + 1, getImageURL(defaultChannels[i][0]), defaultChannels[i][1], defaultChannels[i][2], defaultChannels[i][3], defaultChannels[i][4])
+        addChannelControls(numImages + 1, getImageURL(defaultChannels[i][0]), defaultChannels[i][1], defaultChannels[i][5], defaultChannels[i][2], defaultChannels[i][3], defaultChannels[i][4])
         channelImgs.push(numImages);
         if (resolution != null) {
           channelImgsTiles.push(Array(2048));
           channelImgsLevel.push(maxzdim);
         }
-        loadChannelImage(numImages, getImageURL(defaultChannels[i][0]), defaultChannels[i][1], defaultChannels[i][2], defaultChannels[i][3], defaultChannels[i][4]); 
+        loadChannelImage(numImages, getImageURL(defaultChannels[i][0]), defaultChannels[i][1], defaultChannels[i][5], defaultChannels[i][2], defaultChannels[i][3], defaultChannels[i][4]);
         numImages = numImages + 1; 
       }
       activateCanvas();
