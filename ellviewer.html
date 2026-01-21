@@ -347,8 +347,8 @@
       calculateZoomIndicator(finalZoom);
       canvas.setZoom(finalZoom);
       var vpt = canvas.viewportTransform;
-      vpt[4] = canvas.height / imgHeight < canvas.width / imgWidth ? (canvas.width / 2) * finalZoom : 0;
-      vpt[5] = canvas.height / imgHeight > canvas.width / imgWidth ? (canvas.height / 2) * finalZoom : 0;
+      vpt[4] = canvas.width / 2 - (imgWidth * finalZoom) / 2;
+      vpt[5] = 0 + canvas.height / 2 - (imgHeight * finalZoom) / 2;
       canvas.requestRenderAll();
     }
   }
