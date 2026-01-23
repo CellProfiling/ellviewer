@@ -125,10 +125,13 @@
   }
   .channel-slider .ui-slider-handle {
     outline: 0;
+    width: 0.2em;
+    height: 1.2em;
     background: white;
-    border-radius: 50%;
+    border-radius: 25%;
     top: -8px;
     border:none !important;
+    margin-left: -.2em;
   }
   .channel-slider .ui-slider-horizontal {
     top: 1em;
@@ -137,6 +140,16 @@
     width: 90%;
     border:none !important;
     background: white;
+  }
+  .channel-input {
+    margin-top: 5px;
+    width: 22px;
+    margin-bottom: 4px;
+    color: inherit;
+    background-color: #000000;
+  }
+  .channel-input-dash {
+    margin-top: 8px;
   }
   .channel-range {
     margin-top: 8px;
@@ -301,11 +314,16 @@
       for (i = 0; i < channelImgs.length; i++) {
         if (channelImgs[i] != null) {
           if (channelImgs[i].csv_img_clip != "" && channelImgs[i].csv_img_clip != "no") {
-            channelImgs[i].v_minvalue = parseFloat(channelImgs[i].csv_img_clip.split("-")[ 0 ]) / parseFloat(bitDepth);
-            channelImgs[i].v_maxvalue = parseFloat(bitDepth) / parseFloat(channelImgs[i].csv_img_clip.split("-")[ 1 ]);
+            if (channelImgs[i].csv_img_clip != "auto") {
+              channelImgs[i].v_minvalue = parseFloat(channelImgs[i].csv_img_clip.split("-")[ 0 ]) / parseFloat(bitDepth);
+              channelImgs[i].v_maxvalue = parseFloat(bitDepth) / parseFloat(channelImgs[i].csv_img_clip.split("-")[ 1 ]);
+            } else {
+              channelImgs[i].v_minvalue = channelImgs[i].v_minvalue_optimal.
+              channelImgs[i].v_maxvalue = channelImgs[i].v_maxvalue_optimal;
+            }
           } else {
-            channelImgs[i].v_minvalue = 0.0
-            channelImgs[i].v_maxvalue = 1.0;
+            channelImgs[i].v_minvalue = 0.0;
+            channelImgs[i].v_maxvalue = parseFloat(bitDepth);
           }
           if (channelImgs[i].csv_img_transparency != "" && channelImgs[i].csv_img_transparency != "no") {
             channelImgs[i].v_transparency = parseFloat(channelImgs[i].csv_img_transparency);
@@ -320,10 +338,11 @@
           var sliderIntensityMin = Math.floor(channelImgs[i].v_minvalue * parseFloat(bitDepth));
           var sliderIntensityMax = Math.min(bitDepth, Math.floor(parseFloat(bitDepth) / channelImgs[i].v_maxvalue));
           $( "#sliderChannelIntensity" + (i + 1) ).slider( "option", "values", [ sliderIntensityMin, sliderIntensityMax ] );
-          $( "#sliderChannelIntensityValue" + (i + 1) ).html( sliderIntensityMin + " - " + sliderIntensityMax);
+          $( "#sliderChannelIntensityValueMin" + (i + 1) ).val( sliderIntensityMin);
+          $( "#sliderChannelIntensityValueMax" + (i + 1) ).val( sliderIntensityMax);
           var sliderTransparencyValue = Math.floor(channelImgs[i].v_transparency * 100.0);
           $( "#sliderChannelTransparency" + (i + 1) ).slider( "option", "value", sliderTransparencyValue );
-          $( "#sliderChannelTransparencyValue" + (i + 1) ).html( sliderTransparencyValue + "%");
+          $( "#sliderChannelTransparencyValue" + (i + 1) ).val( sliderTransparencyValue);
           adjustImage(channelImgs[i]);
         }
         if (resolution != null) {
@@ -475,7 +494,8 @@
       $( "#checkChannel" + index).remove();
       $( "#color-picker" + index).parent().remove();
       $( "#sliderChannelIntensity" + index).remove();
-      $( "#sliderChannelIntensityValue" + index).remove();
+      $( "#sliderChannelIntensityValueMin" + index).remove();
+      $( "#sliderChannelIntensityValueMax" + index).remove();
       $( "#sliderChannelTransparency" + index).remove();
       $( "#sliderChannelTransparencyValue" + index).remove();
       $( "#cancelChannel" + index).remove();
@@ -562,7 +582,8 @@
       var sliderIntensityMin = Math.floor(channelImgs[index -1].v_minvalue * parseFloat(bitDepth));
       var sliderIntensityMax = Math.min(bitDepth, Math.floor(parseFloat(bitDepth) / channelImgs[index -1].v_maxvalue));
       $( "#sliderChannelIntensity" + index ).slider( "option", "values", [ sliderIntensityMin, sliderIntensityMax ] );
-      $( "#sliderChannelIntensityValue" + index ).html( sliderIntensityMin + " - " + sliderIntensityMax);
+      $( "#sliderChannelIntensityValueMin" + index ).val( sliderIntensityMin);
+      $( "#sliderChannelIntensityValueMax" + index ).val( sliderIntensityMax);
       adjustImage(channelImgs[index -1]);
       if (resolution != null) {
         if (channelImgsTiles[index - 1] !=  null) {
@@ -866,6 +887,31 @@
     }
   }
 
+  function checkRangeValue(img_index, valueType) {
+     const isOnlyDigits = (str) => {
+       return /^\d+$/.test(str);
+     };
+     if (valueType.includes("intensity-min")) {
+        var currValue = $( "#sliderChannelIntensityValueMin" + img_index).val();
+        if (isOnlyDigits(currValue) && parseInt(currValue) <= bitDepth) {
+          $( "#sliderChannelIntensity" + img_index ).slider( "option", "values", [ parseInt(currValue), parseInt($( "#sliderChannelIntensityValueMax" + (img_index + 1) ).val()) ] );
+          $( "#sliderChannelIntensity" + img_index ).data("ui-slider")._slide(null, { values: [ parseInt(currValue), parseInt($( "#sliderChannelIntensityValueMax" + (img_index + 1) ).val()) ] });
+        }
+     } else if (valueType.includes("intensity-max")) {
+        var currValue = $( "#sliderChannelIntensityValueMax" + img_index).val();
+        if (isOnlyDigits(currValue) && parseInt(currValue) <= bitDepth) {
+          $( "#sliderChannelIntensity" + img_index).slider( "option", "values", [ parseInt($( "#sliderChannelIntensityValueMin" + (img_index + 1) ).val()), parseInt(currValue) ] );
+          $( "#sliderChannelIntensity" + img_index ).data("ui-slider")._slide(null, { values: [ parseInt($( "#sliderChannelIntensityValueMin" + (img_index + 1) ).val()), parseInt(currValue) ] });
+        }
+     } else if (valueType.includes("transparency")) {
+        var currValue = $( "#sliderChannelTransparencyValue" + img_index).val();
+        if (isOnlyDigits(currValue) && parseInt(currValue) <= 100) {
+          $( "#sliderChannelTransparency" + img_index).slider( "option", "value", parseInt(currValue));
+          $( "#sliderChannelTransparency" + img_index ).data("ui-slider")._slide(null, { value: parseInt(currValue) });
+        }
+     }
+  }
+
   function addChannelControls(img_index, img_url, img_name, img_visible, img_clip, img_transparency, img_color) {
     var channelControlsHTML = "<div id=\"channelName" + img_index + "\" class=\"channel-name\">" +
                                 "<p>" + img_name + "</p>" + 
@@ -880,16 +926,17 @@
     }
     var sliderIntervalMin = 0;
     var sliderIntervalMax = bitDepth;
-    if (img_clip != "" && img_clip != "no") {
-      sliderIntervalMin = parseInt(img_clip.split("-")[ 0 ]);
-      sliderIntervalMax = parseInt(img_clip.split("-")[ 1 ]);
-    }
     var sliderTransparencyValue = 100;
     if (img_transparency != "" && img_transparency != "no") {
       sliderTransparencyValue = Math.floor(img_transparency * 100.0);
     } 
-    channelControlsHTML = channelControlsHTML + "<div id=\"sliderChannelIntensity" + img_index + "\" class=\"channel-slider\"></div><span id=\"sliderChannelIntensityValue" + img_index + "\" class=\"channel-range\">" + sliderIntervalMin + " - " + sliderIntervalMax + "</span>" +
-                                  "<div id=\"sliderChannelTransparency" + img_index + "\" class=\"channel-slider\"></div><span id=\"sliderChannelTransparencyValue" + img_index + "\" class=\"channel-range\">" + sliderTransparencyValue + "%</span>";
+    channelControlsHTML = channelControlsHTML + "<div id=\"sliderChannelIntensity" + img_index + "\" class=\"channel-slider\"></div>" +
+                                  "<input type=\"text\" id=\"sliderChannelIntensityValueMin" + img_index + "\" class=\"channel-input\" value=\"" + sliderIntervalMin + "\" onchange=\"checkRangeValue(" + img_index + ",'intensity-min');\">" +
+                                  "<span class=\"channel-input-dash\">-</span>" +
+                                  "<input type=\"text\" id=\"sliderChannelIntensityValueMax" + img_index + "\" class=\"channel-input\" value=\"" + sliderIntervalMax + "\" onchange=\"checkRangeValue(" + img_index + ",'intensity-max');\">" +
+                                  "<div id=\"sliderChannelTransparency" + img_index + "\" class=\"channel-slider\"></div>" +
+                                  "<input type=\"text\" id=\"sliderChannelTransparencyValue" + img_index + "\" class=\"channel-input\" value=\"" + sliderTransparencyValue + "\" onchange=\"checkRangeValue(" + img_index + ",'transparency');\">" +
+                                  "<span class=\"channel-input-dash\">%</span>";
     channelControlsHTML = channelControlsHTML + "<span id=\"cancelChannel" + img_index + "\" class=\"material-symbols-outlined channel-delete interactive-item\" onclick=\"deleteChannel(" + img_index + ");\">close</span></div>"
     $("#channel-list").append(channelControlsHTML);
     $( "#sliderChannelIntensity" + (img_index) ).slider({
@@ -900,7 +947,8 @@
       slide: function( event, ui ) {
         if (!retexturing) {
           var slideId = parseInt(this.id.replace("sliderChannelIntensity", ""));
-          $( "#sliderChannelIntensityValue" + slideId ).html( ui.values[ 0 ] + " - " + ui.values[ 1 ]);
+          $( "#sliderChannelIntensityValueMin" + slideId ).val( ui.values[ 0 ]);
+          $( "#sliderChannelIntensityValueMax" + slideId ).val( ui.values[ 1 ]);
           if (Date.now() > sliderTimeout + sliderInterval) {
             sliderTimeout = Date.now();
             channelImgs[slideId -1].v_minvalue = parseFloat(ui.values[ 0 ]) / parseFloat(bitDepth);
@@ -908,13 +956,13 @@
             adjustImage(channelImgs[slideId -1]);
             if (resolution != null) {
               for (j = 0; j < channelImgsTiles[slideId - 1].length; j++) {
-                if (channelImgsTiles[slideId - 1][j] != null) {          
+                if (channelImgsTiles[slideId - 1][j] != null) {
                   channelImgsTiles[slideId -1][j].v_minvalue = channelImgs[slideId -1].v_minvalue;
                   channelImgsTiles[slideId -1][j].v_maxvalue = channelImgs[slideId -1].v_maxvalue;
                   adjustImage(channelImgsTiles[slideId - 1][j]);
                 }
               }
-            } 
+            }
             canvas.requestRenderAll();
           }
         }
@@ -927,19 +975,19 @@
       slide: function( event, ui ) {
         if (!retexturing) {
           var slideId = parseInt(this.id.replace("sliderChannelTransparency", ""));
-          $( "#sliderChannelTransparencyValue" + slideId ).html(ui.value + "%");
+          $( "#sliderChannelTransparencyValue" + slideId ).val(ui.value);
           if (Date.now() > sliderTimeout + sliderInterval) {
             sliderTimeout = Date.now();
             channelImgs[slideId -1].v_transparency = ui.value / 100.0;
             adjustImage(channelImgs[slideId -1]);
             if (resolution != null) {
               for (j = 0; j < channelImgsTiles[slideId - 1].length; j++) {
-                if (channelImgsTiles[slideId - 1][j] != null) {          
+                if (channelImgsTiles[slideId - 1][j] != null) {
                   channelImgsTiles[slideId -1][j].v_transparency = channelImgs[slideId -1].v_transparency;
                   adjustImage(channelImgsTiles[slideId - 1][j]);
                 }
               }
-            } 
+            }
             canvas.requestRenderAll();
           }
         }
@@ -994,9 +1042,15 @@
     ctx.drawImage(img_raw, 0, 0);
     img_raw_data = ctx.getImageData(0, 0, img_raw.width, img_raw.height);
     var listpositivepixel = [];
-    for (let i = 0; i < img_raw_data.data.length; i += 4) {
+    var i = 0;
+    while (i < img_raw_data.data.length) {
       if (img_raw_data.data[i] > 0) {
         listpositivepixel.push(img_raw_data.data[i]);
+
+      }
+      i = i + 1;
+      if ((i + 1) % 4 == 0) {
+         i = i + 1;
       }
     }
     listpositivepixel.sort(d3.ascending);
@@ -1016,12 +1070,21 @@
         oImg.csv_img_color = img_color;
         calculateMinMax(oImg, img_index);
         if (img_clip != "" && img_clip != "no") {
-          oImg.v_minvalue = parseFloat(img_clip.split("-")[ 0 ]) / parseFloat(bitDepth);
-          oImg.v_maxvalue = parseFloat(bitDepth) / parseFloat(img_clip.split("-")[ 1 ]);
+          if (img_clip != "auto") {
+            oImg.v_minvalue = parseFloat(img_clip.split("-")[ 0 ]) / parseFloat(bitDepth);
+            oImg.v_maxvalue = parseFloat(bitDepth) / parseFloat(img_clip.split("-")[ 1 ]);
+          } else {
+            oImg.v_minvalue = oImg.v_minvalue_optimal
+            oImg.v_maxvalue = oImg.v_maxvalue_optimal;          }
         } else {
-          oImg.v_minvalue = 0.0
+          oImg.v_minvalue = 0.0;
           oImg.v_maxvalue = 1.0;
         }
+        var sliderIntensityMin = Math.floor(oImg.v_minvalue * parseFloat(bitDepth));
+        var sliderIntensityMax = Math.min(bitDepth, Math.floor(parseFloat(bitDepth) / oImg.v_maxvalue));
+        $( "#sliderChannelIntensity" + (img_index + 1) ).slider( "option", "values", [ sliderIntensityMin, sliderIntensityMax ] );
+        $( "#sliderChannelIntensityValueMin" + (img_index + 1) ).val( sliderIntensityMin);
+        $( "#sliderChannelIntensityValueMax" + (img_index + 1) ).val( sliderIntensityMax);
         if (img_transparency != "" && img_transparency != "no") {
           oImg.v_transparency_filter = parseFloat(img_transparency);
         } else {
@@ -1170,7 +1233,7 @@
           channelImgsLevel.push(maxzdim);
         }
         loadChannelImage(numImages, getImageURL(defaultChannels[i][0]), defaultChannels[i][1], defaultChannels[i][5], defaultChannels[i][2], defaultChannels[i][3], defaultChannels[i][4]);
-        numImages = numImages + 1; 
+        numImages = numImages + 1;
       }
       activateCanvas();
       if (resolution != null) {
