@@ -789,6 +789,7 @@
                   if (texturedImage.indexOf("_x0_y0") > 0) {
                     imgLevelRetextured.push(imageIndex + "_" + zdim);
                   }
+                  render_deepest_level();
                 }
                 tilesToRetexture.splice(0, 1);
                 retexture_tiles();
@@ -804,6 +805,7 @@
       })(texturedImage);
     } else {
       document.getElementById("retexturing-indicator").style.display = "none";
+      render_deepest_level();
       if (retexturing) {
         scheduleRetexture();
       }
@@ -811,52 +813,56 @@
   }
 
   function render_deepest_level() {
-    for (i = 0; i < channelImgsLevel.length; i++) {
-      var currChannelLevel = channelImgsLevel[i]
-      if (currChannelLevel != null && currChannelLevel * 2 > minTileResolution / 1024) {
-        zdim = 1024 * (currChannelLevel);
-        if (imgLevelRetextured.includes(i + "_" + (zdim / 2)) || tilesToRetexture.length == 0) {
-          retexturing = true;
-          var pyramidIndex = 0;
-          var currzdim = maxzdim;
-          while (zdim / 1024 != currzdim) {
-            currzdim = currzdim / 2;
-            pyramidIndex = pyramidIndex + 1;
-          }
-          for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
-            for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
-              tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
-              if (channelImgsTiles[i][tile_index] != null) {
-                channelImgsTiles[i][tile_index].opacity = (channelImgs[i].csv_img_visible == "visible" ? 1.0 : 0.0);
-              }
+    var anyChanged;
+    do {
+      anyChanged = false;
+      for (i = 0; i < channelImgsLevel.length; i++) {
+        var currChannelLevel = channelImgsLevel[i]
+        if (currChannelLevel != null && currChannelLevel * 2 > minTileResolution / 1024) {
+          zdim = 1024 * (currChannelLevel);
+          if (imgLevelRetextured.includes(i + "_" + (zdim / 2)) || tilesToRetexture.length == 0) {
+            retexturing = true;
+            var pyramidIndex = 0;
+            var currzdim = maxzdim;
+            while (zdim / 1024 != currzdim) {
+              currzdim = currzdim / 2;
+              pyramidIndex = pyramidIndex + 1;
             }
-          }
-          if (currChannelLevel == maxzdim) {
-            channelImgs[i].opacity = 0.0;
-          } else {
-            pyramidIndex = pyramidIndex - 1;
             for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
               for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
-                tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;           
+                tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
                 if (channelImgsTiles[i][tile_index] != null) {
-                  channelImgsTiles[i][tile_index].opacity = 0.0;
-                  canvas.remove(channelImgsTiles[i][tile_index]);
-                  delete channelImgsTiles[i][tile_index];
+                  channelImgsTiles[i][tile_index].opacity = (channelImgs[i].csv_img_visible == "visible" ? 1.0 : 0.0);
                 }
               }
             }
+            if (currChannelLevel == maxzdim) {
+              channelImgs[i].opacity = 0.0;
+            } else {
+              pyramidIndex = pyramidIndex - 1;
+              for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
+                for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
+                  tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
+                  if (channelImgsTiles[i][tile_index] != null) {
+                    channelImgsTiles[i][tile_index].opacity = 0.0;
+                    canvas.remove(channelImgsTiles[i][tile_index]);
+                    delete channelImgsTiles[i][tile_index];
+                  }
+                }
+              }
+            }
+            channelImgsLevel[i] = Math.floor(currChannelLevel / 2);
+            var index = imgLevelRetextured.indexOf(i + "_" + (zdim / 2));
+            if (index > -1) {
+              imgLevelRetextured.splice(index, 1);
+            }
+            retexturing = false;
+            anyChanged = true;
           }
-          channelImgsLevel[i] = Math.floor(currChannelLevel / 2);
-          canvas.requestRenderAll();
-          var index = imgLevelRetextured.indexOf(i + "_" + (zdim / 2));
-          if (index > -1) {
-            imgLevelRetextured.splice(index, 1);
-          }
-
-          retexturing = false;
         }
       }
-    }
+    } while (anyChanged);
+    requestAnimationFrame(function() { canvas.renderAll(); });
   }
 
   function retexture_image(img_index) {
