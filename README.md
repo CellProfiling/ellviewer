@@ -8,7 +8,7 @@ Ellviewer (Emma Lundberg's lab viewer) is a simple online viewer to easily share
 Key features
 ------------
 
-- Serverless Static HMTL viewer that you don't even need to host. That allows you to put a viewer anywhere you can place a URL.
+- Serverless Static HTML viewer that you don't even need to host. That allows you to put a viewer anywhere you can place a URL.
 - Zero code configuration. The behavior of the viewer is controlled by a simple CSV file. 
 - Uses regular JPG/PNG files or direct image links.
 - Adds transparency, coloring and clipping on demand.
@@ -18,7 +18,7 @@ Key features
 How to use it
 -------------
 
-Ellviewer works with the following file structure accesible online:
+Ellviewer works with the following file structure accessible online:
 - A CSV file containing the metadata to be loaded/configured in the viewer
 - [Optional] The images to be shown. If you use external URLs in the CSV metadata file, you don't need to host the images locally.
 - [Optional] The `ellviewer.html` itself. Or you can use our hosted one here: https://lundberglab.stanford.edu/ellviewer/ellviewer.html
@@ -106,7 +106,7 @@ https://lundberglab.stanford.edu/Prominent/images/20240418_d1_kid_K2110291_Scan2
 https://lundberglab.stanford.edu/Prominent/images/20240418_d1_kid_K2110291_Scan2_ZO1.jpg,ZO1,,1.0,#ffff32,no
 ```
 
-- The images in that folder ( `https://lundberglab.stanford.edu/Prominent/images/` ) have been processed with the `create_pyramid.py` (located in the `util` repository folder) to generate a pyramid file structure that is also copied in the same folder. Unfortunatelly, the images are too big to be added to github, but they look like this:
+- The images in that folder ( `https://lundberglab.stanford.edu/Prominent/images/` ) have been processed with the `create_pyramid.py` (located in the `util` repository folder) to generate a pyramid file structure that is also copied in the same folder. Unfortunately, the images are too big to be added to github, but they look like this:
 
 ![Example 3 pyramid files](./doc/doc1.jpg "Example 3 pyramid files")
 
@@ -126,20 +126,52 @@ Metadata options and parameters
 
 The metadata file has the following columns:
 
-- `uri`:  can be the local name of the file (it needs to be located under `images` sub-folder) or any external accessile URL.
+- `uri`:  can be the local name of the file (it needs to be located under the `images` sub-folder relative to `ellviewer.html`) or any external accessible URL.
 - `name`:  name of the image in the viewer channel menu.
-- `clip`: optional pre-selected intensity clip for the image. If left blank or with value "no", the image is displayed with all the possible intensity range (0 - max bit depth); if an interval like "x-y" is informed, the image will be shown already pre-clipped with the those values (it can be later changed dynamically in the channel menu). Finally, if you use the value "auto", the default min-max ellviewer quantile clipping will be directly applied.
-- `transparency`: optional combined transparency setting. If left blank or with value "no", the image will not be made transparent (but its opacity can still be changed dynamically in the channel menu); if a value between 0.0 and 1.0 is informed, the image will be made transparent based on it's pixel intensity values (so a black pixel will become totally transparent, a pixel with (max bit depth / 2) intensity will become 50% transparent, etc...) AND the viewer will apply a default opacity value equal to the selected value. So, if you want your jpg images made transparent, just use 1.0 value.
-- `color`: optional color to tint your image with (usefull to color greyscale channel images or masks). If left blank or with value "no", the image will be displayed with its original color AND it will not be possible to change it in the viewer. If a html hex color like "#xxxxxx" is informed, the image will be shown already pre-tinted with the that color value AND it can be later changed dynamically in the channel menu.
-- `default`: controls if the channel is loaded by default. If the value "yes" it's used, the image will be present on the viewer as a channel on load, but not directly displayed; if the value is "visible", it will also be displayed. You can always dynamically load any image (even multiple times) using the channel menu. **[NOTE]**: the more images you default on the viewer, the longer it will take to load them. If you want a fast experience, try to use the bare minimum default images and let the user load the rest on demand through the channel menu.
+- `clip`: optional pre-selected intensity clip for the image. If left blank or with value `"no"`, the image is displayed with all the possible intensity range (0 - max bit depth); if an interval like `"x-y"` is informed, the image will be shown already pre-clipped with those values (it can be later changed dynamically in the channel menu); if you use the value `"auto"`, the viewer will automatically compute and apply a quantile-based min/max clip on load.
+- `transparency`: optional pixel-intensity-based transparency filter. If left blank or with value `"no"`, the image will not be made transparent (but its opacity can still be changed dynamically in the channel menu); if a value between `0.0` and `1.0` is informed, each pixel's alpha will be scaled by its own intensity (so a black pixel becomes fully transparent, a pixel at half the max bit depth becomes 50% transparent, etc.). So, if you want your jpg images made transparent, just use `1.0`.
+- `color`: optional color to tint your image with (useful to color greyscale channel images or masks). If left blank or with value `"no"`, the image will be displayed with its original color AND it will not be possible to change it in the viewer. If an HTML hex color like `"#xxxxxx"` is informed, the image will be shown already pre-tinted with that color value AND it can be later changed dynamically in the channel menu.
+- `default`: controls if the channel is loaded by default. If the value `"yes"` is used, the image will be present on the viewer as a channel on load, but not directly displayed; if the value is `"visible"`, it will also be displayed. You can always dynamically load any image (even multiple times) using the channel menu. **[NOTE]**: the more images you default on the viewer, the longer it will take to load them. If you want a fast experience, try to use the bare minimum default images and let the user load the rest on demand through the channel menu.
 
 There are additional parameters you can add to the viewer URL that affect globally its behavior:
 - `csv`: URL like parameter to load the metadata file remotely. If not used, the viewer expects to find the file in a `metadata/metadata.csv` subfolder. Example: `csv=https://ell-vault.stanford.edu/dav/fredbn/www/ellviewer/demo1/metadata.csv`
 - `bitDepth`: in case you need a 16 bit-depth (default is 8 bit-depth). Example: `bitDepth=16`
-- `pixelToMicron`: if you know the pixelToMicron ratio of the image (common in microscopy images), the viewer zoom indicator will change and offer you a convenient scale while navigating through the images. Example: `pixelToMicron=0.5073077046562237`
-- `sliderInterval`: some browsers/computers are a bit less robust/powerful while changind dynamically the clip and transparency sliders. The default value is a `-1` (ms) blocking timer (so no blocking timer): use a lower/higher value for faster-expensive/slower-cheaper computational response. Example: `sliderInterval=10`
+- `pixelToMicron`: if you know the pixelToMicron ratio of the image (common in microscopy images), the viewer zoom indicator will change and offer you a convenient scale bar while navigating through the images. Example: `pixelToMicron=0.5073077046562237`
+- `sliderInterval`: some browsers/computers are a bit less robust/powerful while changing dynamically the clip and transparency sliders. The default value is `-1` ms (so no blocking timer): use a lower/higher value for faster-expensive/slower-cheaper computational response. Example: `sliderInterval=10`
 - `resolution`: mandatory for large files using the pyramid structure, this value informs about the original resolution of the images. Example: `resolution=15360x18720`
 - `minTileResolution`: mandatory for large files using the pyramid structure, this value marks the lowest tile to be retextured in the images. The possible values are [1024, 2048, 4096, 8192, 16384], and the lower the value the more precise retexturing/resolution the viewer will show per image (and the longer it will take to fully texture the image). Example: `minTileResolution=4096`
+
+
+Channel menu
+------------
+
+Clicking the **Channels** button opens the channel menu, which lets you control each loaded channel and dynamically add new ones.
+
+**Apply to all** controls (top bar):
+- **Show/hide all**: toggles visibility of all channels at once.
+- **Apply min/max**: runs the automatic quantile-based clip on all channels at once.
+- **Reset**: restores all channels to their original CSV values (clip, transparency, color) and resets the zoom to fit the image.
+
+**Per-channel controls** (one row per loaded channel):
+- **Show/hide checkbox**: toggles the visibility of that individual channel.
+- **Color picker**: if a color was set in the CSV, a color swatch is shown and you can click it to change the tint interactively.
+- **Intensity slider**: controls the min/max clip range. You can drag the handles or type values directly in the input fields on either side.
+- **Transparency slider**: controls the global opacity of the channel (0–100%). You can also type a value directly in the input field.
+- **Apply min/max button** (exposure icon): runs the automatic quantile-based clip on that individual channel.
+- **Download button**: downloads the original image file for that channel.
+- **Delete button**: removes the channel from the viewer.
+
+**Add channel**: the dropdown at the top of the channel list lets you pick any channel from the CSV and load it on demand, even if it wasn't in the default set.
+
+
+Viewer controls
+---------------
+
+- **Zoom**: scroll wheel to zoom in/out, centered on the cursor position.
+- **Pan**: click and drag to move around the image.
+- **Fullscreen**: click the fullscreen icon (top-left corner) to toggle fullscreen mode.
+- **Zoom indicator** (bottom-right corner): shows the current zoom level as a percentage, or as a scale bar in microns if `pixelToMicron` is set.
+- **Retexturing indicator**: appears while the viewer is loading higher-resolution pyramid tiles in the background.
 
 
 Pyramid structure

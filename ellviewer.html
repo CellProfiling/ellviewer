@@ -14,7 +14,7 @@
 
 <style>
   body, html {
-    font-family: Arial, Verdana, sans-serif;;
+    font-family: Arial, Verdana, sans-serif;
     background-color: #000000;
   }
   .content {
@@ -318,18 +318,19 @@
               channelImgs[i].v_minvalue = parseFloat(channelImgs[i].csv_img_clip.split("-")[ 0 ]) / parseFloat(bitDepth);
               channelImgs[i].v_maxvalue = parseFloat(bitDepth) / parseFloat(channelImgs[i].csv_img_clip.split("-")[ 1 ]);
             } else {
-              channelImgs[i].v_minvalue = channelImgs[i].v_minvalue_optimal.
+              channelImgs[i].v_minvalue = channelImgs[i].v_minvalue_optimal;
               channelImgs[i].v_maxvalue = channelImgs[i].v_maxvalue_optimal;
             }
           } else {
             channelImgs[i].v_minvalue = 0.0;
-            channelImgs[i].v_maxvalue = parseFloat(bitDepth);
+            channelImgs[i].v_maxvalue = 1.0;
           }
           if (channelImgs[i].csv_img_transparency != "" && channelImgs[i].csv_img_transparency != "no") {
-            channelImgs[i].v_transparency = parseFloat(channelImgs[i].csv_img_transparency);
+            channelImgs[i].v_transparency_filter = parseFloat(channelImgs[i].csv_img_transparency);
           } else {
-            channelImgs[i].v_transparency = 1.0;
+            channelImgs[i].v_transparency_filter = 0.0;
           }
+          channelImgs[i].v_transparency = 1.0;
           if (channelImgs[i].csv_img_color != "" && channelImgs[i].csv_img_color != "no") {
             channelImgs[i].v_color = String(channelImgs[i].csv_img_color);
           } else {
@@ -403,7 +404,12 @@
                     pyramidIndex = pyramidIndex + 1;
                   }
                 } else {
-                  pyramidIndex = 4;
+                  var tempzdim = maxzdim;
+                  var targetzdim = minTileResolution / 1024;
+                  while (targetzdim != tempzdim) {
+                    tempzdim = tempzdim / 2;
+                    pyramidIndex = pyramidIndex + 1;
+                  }
                 }
                 for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
                   for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
@@ -458,7 +464,12 @@
                 pyramidIndex = pyramidIndex + 1;
               }
             } else {
-              pyramidIndex = 4;
+              var tempzdim = maxzdim;
+              var targetzdim = minTileResolution / 1024;
+              while (targetzdim != tempzdim) {
+                tempzdim = tempzdim / 2;
+                pyramidIndex = pyramidIndex + 1;
+              }
             }
             for (x = 0; x < pyramidInfo[pyramidIndex][0]; x++) {
               for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
@@ -491,20 +502,13 @@
   function deleteChannel(index) {
     if (!retexturing) {
       $( "#channelName" + index).remove();
-      $( "#checkChannel" + index).remove();
-      $( "#color-picker" + index).parent().remove();
-      $( "#sliderChannelIntensity" + index).remove();
-      $( "#sliderChannelIntensityValueMin" + index).remove();
-      $( "#sliderChannelIntensityValueMax" + index).remove();
-      $( "#sliderChannelTransparency" + index).remove();
-      $( "#sliderChannelTransparencyValue" + index).remove();
-      $( "#cancelChannel" + index).remove();
+      $( "#channelCommand" + index).remove();
       canvas.remove(channelImgs[index - 1]);
       delete channelImgs[index - 1];
       if (resolution != null) {
         delete channelImgsLevel[index - 1];
         var k = 0;
-        while (k < tilesToRetexture.lenght) {
+        while (k < tilesToRetexture.length) {
           var imgId = "img" + (index - 1) + "_";
           if (tilesToRetexture[k].startsWith(imgId)) {
             tilesToRetexture.splice(k, 1);
@@ -634,12 +638,12 @@
     applyTo2d: function(options) {
       var imageData = options.imageData,
       data = imageData.data, i, len = data.length;
-      if (v_transparency_filter != 0.0) {
-        for (i = 0; i < len; i += 4) {
-          data[i + 3] = max(data[i], max(data[i + 1], data[i + 2])) * this.v_transparency_filter;
+      for (i = 0; i < len; i += 4) {
+        if (this.v_transparency_filter != 0.0) {
+          data[i + 3] = Math.max(data[i], Math.max(data[i + 1], data[i + 2])) * this.v_transparency_filter;
         }
+        data[i + 3] = data[i + 3] * this.v_transparency;
       }
-      data[i + 3] = bitDepth * this.v_transparency;
     }
   });
 
@@ -689,12 +693,12 @@
       var imageData = options.imageData,
       data = imageData.data, i, len = data.length;
       for (i = 0; i < len; i += 4) {
-        if (data[i] < this.minvalue) {
+        if (data[i] < this.v_minvalue) {
           data[i] = 0;
           data[i + 1] = 0;
           data[i + 2] = 0;
         } else {
-          data[i] = data[i] * bitDepth / this.maxvalue;
+          data[i] = data[i] * bitDepth / this.v_maxvalue;
           data[i + 1] = data[i + 1] * bitDepth / this.v_maxvalue;
           data[i + 2] = data[i + 2] * bitDepth / this.v_maxvalue;
         }
@@ -711,7 +715,7 @@
     imageSmoothingEnabled: false
   });
   canvas.isDragging = false;
-  canvas.selection = true;
+  canvas.selection = false;
   var channelImgs = [];
   var channelImgsTiles = [];
   var channelImgsLevel = [];
@@ -727,7 +731,16 @@
   var pyramidInfo = [[2,0], [4,4], [8,20], [16,84], [32,340]]; 
 
 
+  var retextureScheduled = false;
+  function scheduleRetexture() {
+    if (!retextureScheduled) {
+      retextureScheduled = true;
+      setTimeout(retexture_tiles, 50);
+    }
+  }
+
   function retexture_tiles(){
+    retextureScheduled = false;
     if (!retexturing && tilesToRetexture.length > 0) {
       document.getElementById("retexturing-indicator").style.display = "block";
       var texturedImage = tilesToRetexture[0];
@@ -771,7 +784,7 @@
                   canvas.add(oImg);
                   oImg.set('selectable', false);
                   oImg.opacity = 0.0;
-                  oImg.moveTo((imageIndex + 1) * 2048) + tile_index;
+                  oImg.moveTo((imageIndex + 1) * 2048 + tile_index);
                   adjustImage(oImg);
                   if (texturedImage.indexOf("_x0_y0") > 0) {
                     imgLevelRetextured.push(imageIndex + "_" + zdim);
@@ -791,7 +804,9 @@
       })(texturedImage);
     } else {
       document.getElementById("retexturing-indicator").style.display = "none";
-      setTimeout(retexture_tiles, 50);
+      if (retexturing) {
+        scheduleRetexture();
+      }
     }
   }
 
@@ -812,7 +827,7 @@
             for (y = 0; y < pyramidInfo[pyramidIndex][0]; y++) {
               tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
               if (channelImgsTiles[i][tile_index] != null) {
-                channelImgsTiles[i][tile_index].opacity = (channelImgs[i].csv_img_visible = "visible" ? 1.0 : 0.0);
+                channelImgsTiles[i][tile_index].opacity = (channelImgs[i].csv_img_visible == "visible" ? 1.0 : 0.0);
               }
             }
           }
@@ -842,8 +857,6 @@
         }
       }
     }
-
-    setTimeout(render_deepest_level, 500);
   }
 
   function retexture_image(img_index) {
@@ -894,14 +907,14 @@
      if (valueType.includes("intensity-min")) {
         var currValue = $( "#sliderChannelIntensityValueMin" + img_index).val();
         if (isOnlyDigits(currValue) && parseInt(currValue) <= bitDepth) {
-          $( "#sliderChannelIntensity" + img_index ).slider( "option", "values", [ parseInt(currValue), parseInt($( "#sliderChannelIntensityValueMax" + (img_index + 1) ).val()) ] );
-          $( "#sliderChannelIntensity" + img_index ).data("ui-slider")._slide(null, { values: [ parseInt(currValue), parseInt($( "#sliderChannelIntensityValueMax" + (img_index + 1) ).val()) ] });
+          $( "#sliderChannelIntensity" + img_index ).slider( "option", "values", [ parseInt(currValue), parseInt($( "#sliderChannelIntensityValueMax" + img_index ).val()) ] );
+          $( "#sliderChannelIntensity" + img_index ).data("ui-slider")._slide(null, { values: [ parseInt(currValue), parseInt($( "#sliderChannelIntensityValueMax" + img_index ).val()) ] });
         }
      } else if (valueType.includes("intensity-max")) {
         var currValue = $( "#sliderChannelIntensityValueMax" + img_index).val();
         if (isOnlyDigits(currValue) && parseInt(currValue) <= bitDepth) {
-          $( "#sliderChannelIntensity" + img_index).slider( "option", "values", [ parseInt($( "#sliderChannelIntensityValueMin" + (img_index + 1) ).val()), parseInt(currValue) ] );
-          $( "#sliderChannelIntensity" + img_index ).data("ui-slider")._slide(null, { values: [ parseInt($( "#sliderChannelIntensityValueMin" + (img_index + 1) ).val()), parseInt(currValue) ] });
+          $( "#sliderChannelIntensity" + img_index).slider( "option", "values", [ parseInt($( "#sliderChannelIntensityValueMin" + img_index ).val()), parseInt(currValue) ] );
+          $( "#sliderChannelIntensity" + img_index ).data("ui-slider")._slide(null, { values: [ parseInt($( "#sliderChannelIntensityValueMin" + img_index ).val()), parseInt(currValue) ] });
         }
      } else if (valueType.includes("transparency")) {
         var currValue = $( "#sliderChannelTransparencyValue" + img_index).val();
@@ -1036,11 +1049,14 @@
   }
   
   function calculateMinMax(img, index) {
-    var ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    img_raw = img.getElement();
-    ctx.drawImage(img_raw, 0, 0);
-    img_raw_data = ctx.getImageData(0, 0, img_raw.width, img_raw.height);
+    var sampleSize = 256;
+    var offscreen = document.createElement('canvas');
+    offscreen.width = sampleSize;
+    offscreen.height = sampleSize;
+    var ctx = offscreen.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img.getElement(), 0, 0, sampleSize, sampleSize);
+    var img_raw_data = ctx.getImageData(0, 0, sampleSize, sampleSize);
     var listpositivepixel = [];
     var i = 0;
     while (i < img_raw_data.data.length) {
@@ -1131,6 +1147,7 @@
         if (zoom < 0.05) zoom = 0.05;
         calculateZoomIndicator(zoom);
         this.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        render_deepest_level();
         opt.e.preventDefault();
         opt.e.stopPropagation();
       }
@@ -1160,7 +1177,7 @@
       if (!retexturing) {
         this.setViewportTransform(this.viewportTransform);
         this.isDragging = false;
-        this.selection = true;
+        this.selection = false;
       }
     });
   }

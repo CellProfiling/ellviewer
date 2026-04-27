@@ -7,12 +7,13 @@ image_folder = "images"
 output_folder = "pyramid"
 
 
-file_list = os.listdir(image_folder)
+VALID_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.tif', '.tiff'}
+file_list = [f for f in os.listdir(image_folder) if os.path.splitext(f)[1].lower() in VALID_EXTENSIONS]
 for file in file_list:
+    print(f"Processing {file}...")
     file_without_extension, dest_extension = os.path.splitext(os.path.basename(file))
 
     image = Image.open(os.path.join(image_folder, file))
-    image.save(os.path.join(output_folder, file_without_extension + dest_extension))
     width = image.width
     height = image.height
 
