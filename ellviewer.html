@@ -180,13 +180,26 @@
     color:#ff8800;
     text-align:right;
   }
+  #memory-indicator {
+    position:absolute;
+    bottom:110px;
+    left:calc(100vw - 150px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  #memory-indicator p {
+    color:#aaaaaa;
+    text-align:right;
+    font-size:12px;
+  }
   #zoom-indicator {
     position:absolute;
     bottom:25px;
     left:calc(100vw - 150px);
-    display: flex; 
+    display: flex;
     flex-direction: column;
-    justify-content: center; 
+    justify-content: center;
   }
   #zoom-indicator p {
     color:white;
@@ -254,6 +267,9 @@
     </div>
     <div id="fullscreen-indicator" style="z-index:100;">
       <span class="material-symbols-outlined interactive-item" onclick="toggleFullscreen(this)">fullscreen</span>
+    </div>
+    <div id="memory-indicator" style="z-index:100;">
+      <p id="memory-value"></p>
     </div>
     <div id="retexturing-indicator" style="z-index:100;">
       <p>Retexturing...</p>
@@ -503,6 +519,7 @@
     if (!retexturing) {
       $( "#channelName" + index).remove();
       $( "#channelCommand" + index).remove();
+      channelImgs[index - 1].dispose();
       canvas.remove(channelImgs[index - 1]);
       delete channelImgs[index - 1];
       if (resolution != null) {
@@ -517,13 +534,15 @@
           }
         }
         for (j = 0; j < channelImgsTiles[index - 1].length; j++) {
-          if (channelImgsTiles[index - 1][j] != null) {          
+          if (channelImgsTiles[index - 1][j] != null) {
+            channelImgsTiles[index - 1][j].dispose();
             canvas.remove(channelImgsTiles[index - 1][j]);
             delete channelImgsTiles[index - 1][j];
           }
         }
         delete channelImgsTiles[index - 1];
-      }  
+      }
+      updateMemoryIndicator();
       canvas.requestRenderAll();
     }
   }
@@ -739,6 +758,30 @@
     }
   }
 
+  function updateMemoryIndicator() {
+    var bytes = 0;
+    for (var ci = 0; ci < channelImgs.length; ci++) {
+      var img = channelImgs[ci];
+      if (img != null && typeof img === 'object' && img.getElement) {
+        var el = img.getElement();
+        var w = el ? (el.naturalWidth || el.width || 0) : 0;
+        var h = el ? (el.naturalHeight || el.height || 0) : 0;
+        bytes += w * h * 4;
+      }
+    }
+    for (var ci = 0; ci < channelImgsTiles.length; ci++) {
+      var tiles = channelImgsTiles[ci];
+      if (tiles == null) continue;
+      for (var ti = 0; ti < tiles.length; ti++) {
+        if (tiles[ti] != null) {
+          bytes += 1024 * 1024 * 4;
+        }
+      }
+    }
+    var mb = (bytes / (1024 * 1024)).toFixed(0);
+    document.getElementById("memory-value").textContent = "~" + mb + " MB";
+  }
+
   function retexture_tiles(){
     retextureScheduled = false;
     if (!retexturing && tilesToRetexture.length > 0) {
@@ -845,6 +888,7 @@
                   tile_index = pyramidInfo[pyramidIndex][1] + x * pyramidInfo[pyramidIndex][0] + y;
                   if (channelImgsTiles[i][tile_index] != null) {
                     channelImgsTiles[i][tile_index].opacity = 0.0;
+                    channelImgsTiles[i][tile_index].dispose();
                     canvas.remove(channelImgsTiles[i][tile_index]);
                     delete channelImgsTiles[i][tile_index];
                   }
@@ -862,6 +906,7 @@
         }
       }
     } while (anyChanged);
+    updateMemoryIndicator();
     requestAnimationFrame(function() { canvas.renderAll(); });
   }
 
@@ -1128,6 +1173,7 @@
         oImg.set('selectable', false);
         oImg.moveTo((img_index + 1) * 2048);
         adjustImage(oImg);
+        updateMemoryIndicator();
         if (channelImgs[0] == oImg) {
           var imgWidth = resolution == null ? oImg.width : resolution[0];
           var imgHeight = resolution == null ? oImg.height : resolution[1];
