@@ -149,6 +149,7 @@ Clicking the **Channels** button opens the channel menu, which lets you control 
 
 **Apply to all** controls (top bar):
 - **Show/hide all**: toggles visibility of all channels at once.
+- **Download visible**: downloads the original image files for all currently visible channels (one file per channel, staggered to avoid browser blocking).
 - **Apply min/max**: runs the automatic quantile-based clip on all channels at once.
 - **Reset**: restores all channels to their original CSV values (clip, transparency, color) and resets the zoom to fit the image.
 

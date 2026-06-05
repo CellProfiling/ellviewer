@@ -245,6 +245,7 @@
     <div id="channel-menu" class="channel-menu" style="z-index:100;display:none;">
         <div style="display: flex; flex-direction: row">
             <span class="material-symbols-outlined channel-check-all interactive-item" title="Show/hide" onclick="toggleAllChannels(this)">check_box</span>
+            <span class="material-symbols-outlined channel-exposure-all interactive-item" title="Download visible" onclick="downloadAllVisible()">download</span>
             <span class="material-symbols-outlined channel-exposure-all interactive-item" title="Apply min/max" onclick="autoAdjustAllChannels(this)">exposure</span>
             <span class="material-symbols-outlined channel-exposure-all interactive-item" title="Reset" onclick="resetAll(this)">reset_image</span>
             <p style="margin-right:20px">|</p>
@@ -585,6 +586,26 @@
       } 
       canvas.requestRenderAll();
     }
+  }
+
+  function downloadAllVisible() {
+    var visibleUrls = [];
+    for (var i = 0; i < channelImgs.length; i++) {
+      if (channelImgs[i] != null && $("#checkChannel" + (i + 1)).html() == "check_box") {
+        visibleUrls.push(channelImgs[i].csv_image_url);
+      }
+    }
+    visibleUrls.forEach(function(url, idx) {
+      setTimeout(function() {
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = url.substring(url.lastIndexOf("/") + 1);
+        a.target = "_blank";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, idx * 200);
+    });
   }
 
   function autoAdjustAllChannels(checkbox) {
