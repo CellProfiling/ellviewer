@@ -845,10 +845,10 @@
                   oImg.scaleToWidth(zdim);
                   oImg.scaleToHeight(zdim);
                   oImg.set({ left: x, top: y });
-                  canvas.add(oImg);
-                  oImg.set('selectable', false);
                   oImg.opacity = 0.0;
-                  oImg.moveTo((imageIndex + 1) * 2048 + tile_index);
+                  // Tiles stack above every base image, grouped by channel (see insertByDepth)
+                  insertByDepth(oImg, 1000000 + imageIndex);
+                  oImg.set('selectable', false);
                   adjustImage(oImg);
                   if (texturedImage.indexOf("_x0_y0") > 0) {
                     imgLevelRetextured.push(imageIndex + "_" + zdim);
@@ -1146,6 +1146,24 @@
     img.v_maxvalue_optimal = parseFloat(bitDepth) / parseFloat(Math.floor(d3.quantile(listpositivepixel, 0.99)));
   }
 
+  // Insert oImg into the canvas at the position dictated by its depth key, so the final z-order
+  // is always deterministic regardless of the order in which images/tiles finish loading. Lower
+  // depth = lower in the stack. Base images use depth = channel index (bottom band); pyramid tiles
+  // use depth = 1000000 + channel index, so every tile sits above every base image while both stay
+  // grouped by channel. This replaces the old moveTo((index+1)*2048...) which clamped to the top
+  // (ellviewer never pre-created placeholder slots), making the stack a load-completion race.
+  function insertByDepth(oImg, depth) {
+    oImg.z_depth = depth;
+    var objs = canvas.getObjects();
+    var pos = 0;
+    for (var k = 0; k < objs.length; k++) {
+      if (objs[k].z_depth != null && objs[k].z_depth <= depth) {
+        pos++;
+      }
+    }
+    canvas.insertAt(oImg, pos);
+  }
+
   function loadChannelImage(img_index, img_url, img_name, img_visible, img_clip, img_transparency, img_color) {
     (function(img_index, img_url) {
       final_img_url = resolution == null ? img_url : img_url.substring(0, img_url.lastIndexOf(".")) + "_base" + img_url.substring(img_url.lastIndexOf("."));
@@ -1190,19 +1208,8 @@
           oImg.scaleToWidth(resolution[0]);
           oImg.scaleToHeight(resolution[1]);
         }
-        canvas.add(oImg);
+        insertByDepth(oImg, img_index);
         oImg.set('selectable', false);
-        // Non-tiled images: place at the CSV-defined depth regardless of async load-completion
-        // order -- sit directly above every already-loaded channel with a lower index. (The
-        // (img_index+1)*2048 pyramid-band formula clamps to the top here, since the canvas holds
-        // only a handful of objects, so the final z-order became load-completion order: a race.)
-        var stackPos = 0;
-        for (var zIdx = 0; zIdx < img_index; zIdx++) {
-          if (typeof channelImgs[zIdx] === "object") {
-            stackPos++;
-          }
-        }
-        oImg.moveTo(stackPos);
         adjustImage(oImg);
         updateMemoryIndicator();
         if (channelImgs[0] == oImg) {
