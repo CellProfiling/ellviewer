@@ -1192,7 +1192,17 @@
         }
         canvas.add(oImg);
         oImg.set('selectable', false);
-        oImg.moveTo((img_index + 1) * 2048);
+        // Non-tiled images: place at the CSV-defined depth regardless of async load-completion
+        // order -- sit directly above every already-loaded channel with a lower index. (The
+        // (img_index+1)*2048 pyramid-band formula clamps to the top here, since the canvas holds
+        // only a handful of objects, so the final z-order became load-completion order: a race.)
+        var stackPos = 0;
+        for (var zIdx = 0; zIdx < img_index; zIdx++) {
+          if (typeof channelImgs[zIdx] === "object") {
+            stackPos++;
+          }
+        }
+        oImg.moveTo(stackPos);
         adjustImage(oImg);
         updateMemoryIndicator();
         if (channelImgs[0] == oImg) {
